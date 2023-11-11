@@ -7,6 +7,7 @@ import (
 )
 
 var hand []models.Domino
+var plays []models.DominoPlayWithPass
 
 func initialize(state *models.DominoGameState) models.DominoPlayWithPass {
 	hand = append(hand, state.Hand...)
@@ -26,16 +27,19 @@ func initialize(state *models.DominoGameState) models.DominoPlayWithPass {
 }
 
 func Play(state *models.DominoGameState) models.DominoPlayWithPass {
-	if len(state.Plays) == 0 {
-		return initialize(state)
+	if len(state.Plays) > 0 {
+		// TODO: implementar lógica de jogo
+		plays = append(plays, models.DominoPlayWithPass{
+			PlayerPosition: state.PlayerPosition,
+			Bone: &models.Domino{
+				X: 6,
+				Y: 6,
+			},
+			Reversed: false,
+		})
+	} else {
+		plays = append(plays, initialize(state))
 	}
 
-	return models.DominoPlayWithPass{
-		PlayerPosition: state.PlayerPosition,
-		Bone: &models.Domino{
-			X: 6,
-			Y: 6,
-		},
-		Reversed: false,
-	}
+	return plays[len(plays)-1]
 }
