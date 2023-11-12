@@ -16,16 +16,16 @@ type dominoStateRequest struct {
 	Player int                `json:"jogador"`
 	Hand   []string           `json:"mao"`
 	Table  []string           `json:"mesa"`
-	Plays  []playStateRequest `json:"jogadas"`
+	Plays  []gameStateRequest `json:"jogadas"`
 }
 
-type playStateRequest struct {
+type gameStateRequest struct {
 	Player    int    `json:"jogador"`
 	Bone      string `json:"pedra"`
 	Direction string `json:"lado"`
 }
 
-func PlayHandler(w http.ResponseWriter, r *http.Request) {
+func GameHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	w.Header().Set("Content-Type", "application/json")
@@ -42,7 +42,7 @@ func PlayHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	domino := playRequestToDomino(&request)
+	domino := gameRequestToDomain(&request)
 
 	play, err := game.Play(domino)
 	if err != nil {
@@ -77,7 +77,7 @@ func PlayHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonResp)
 }
 
-func playRequestToDomino(request *dominoStateRequest) *models.DominoGameState {
+func gameRequestToDomain(request *dominoStateRequest) *models.DominoGameState {
 	hand := make([]models.Domino, 0, len(request.Hand))
 	table := make(map[int]map[int]bool, models.DominoUniqueBones)
 	plays := make([]models.DominoPlay, 0, len(request.Plays))
@@ -117,11 +117,11 @@ func playRequestToDomino(request *dominoStateRequest) *models.DominoGameState {
 	}
 }
 
-func dominoPlayToResponse(dominoPlay models.DominoPlayWithPass) *playStateRequest {
+func dominoPlayToResponse(dominoPlay models.DominoPlayWithPass) *gameStateRequest {
 	direction := "esquerda"
 
 	if dominoPlay.Pass() {
-		return &playStateRequest{
+		return &gameStateRequest{
 			Player:    dominoPlay.PlayerPosition,
 			Bone:      "",
 			Direction: direction,
@@ -132,7 +132,7 @@ func dominoPlayToResponse(dominoPlay models.DominoPlayWithPass) *playStateReques
 		direction = "direita"
 	}
 
-	return &playStateRequest{
+	return &gameStateRequest{
 		Player:    dominoPlay.PlayerPosition,
 		Bone:      dominoPlay.Bone.String(),
 		Direction: direction,

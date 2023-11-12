@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	http.HandleFunc("/", controllers.PlayHandler)
+	http.HandleFunc("/", controllers.GameHandler)
 
 	port := ":8080"
 
