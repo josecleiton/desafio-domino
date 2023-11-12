@@ -1,0 +1,14 @@
+modules = ["go"]
+run = "go run main.go"
+
+[gitHubImport]
+requiredFiles = [".replit"]
+
+[deployment]
+run = ["sh", "-c", "go run main.go"]
+ignorePorts = false
+deploymentTarget = "gce"
+
+[nix]
+channel = "stable-23_05"
+Detected change in environment, reloading shell...
