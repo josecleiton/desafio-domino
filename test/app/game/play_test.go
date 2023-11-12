@@ -30,13 +30,6 @@ func TestPlayInitial(t *testing.T) {
 		t.Fatal("Hand is not empty")
 	}
 
-	maxBone := firstPlay.Hand[0]
-	for _, bone := range firstPlay.Hand[1:] {
-		if bone.Sum() > maxBone.Sum() {
-			maxBone = bone
-		}
-	}
-
 	play, err := game.Play(&firstPlay)
 
 	if err != nil {
@@ -45,6 +38,13 @@ func TestPlayInitial(t *testing.T) {
 
 	if play.Pass() {
 		t.Fatal("Pass is not allowed on first play")
+	}
+
+	maxBone := firstPlay.Hand[0]
+	for _, bone := range firstPlay.Hand[1:] {
+		if bone.Sum() > maxBone.Sum() {
+			maxBone = bone
+		}
 	}
 
 	if play.Bone.Sum() != maxBone.Sum() {
