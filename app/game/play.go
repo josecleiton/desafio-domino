@@ -216,11 +216,6 @@ func oneSidedPlay(left []models.Domino, right []models.Domino) models.DominoPlay
 func maximizedPlay(bones []models.Domino, edge models.DominoInTable) models.DominoPlayWithPass {
 
 	maxBone := bones[0]
-	for _, bone := range bones[1:] {
-		if bone.Sum() > maxBone.Sum() {
-			maxBone = bone
-		}
-	}
 
 	return playFromEdge(maxBone, edge)
 }
