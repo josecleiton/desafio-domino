@@ -73,24 +73,20 @@ func Play(state *models.DominoGameState) (*models.DominoPlayWithPass, error) {
 			Bone:           &play.Bone,
 			Reversed:       play.Reversed,
 		})
-		// 	plays = append(plays, &models.DominoPlayWithPass{ PlayerPosition: player,
-		// Bone: &models.DominoPlay{}
-		// )
 
 	}
-
-	const notMyTurnMsg = "not my turn"
 
 	if len(state.Plays) > 0 {
 		intermediateStates(state)
 		if player != state.PlayerPosition {
-			return nil, errors.New(notMyTurnMsg)
+			return nil, errors.New("not my turn")
 		}
 		plays = append(plays, midgameDecision(state))
 	} else {
 		if player != state.PlayerPosition {
-			return nil, errors.New(notMyTurnMsg)
+			return nil, errors.New("not my turn")
 		}
+
 		plays = append(plays, initialize(state))
 	}
 

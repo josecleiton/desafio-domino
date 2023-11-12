@@ -2,8 +2,10 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/josecleiton/domino/app/game"
@@ -44,10 +46,24 @@ func PlayHandler(w http.ResponseWriter, r *http.Request) {
 
 	play, err := game.Play(domino)
 	if err != nil {
+		const status = http.StatusBadRequest
+		errorMap := map[string]string{
+			"error":  err.Error(),
+			"status": http.StatusText(status),
+			"code":   fmt.Sprintf("%d", status),
+		}
 
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
-		log.Fatalf("Error happened in play. Err: %s", err)
+		w.WriteHeader(status)
+
+		jsonResp, marshalErr := json.Marshal(errorMap)
+		if marshalErr != nil {
+			w.Write([]byte(marshalErr.Error()))
+		} else {
+			w.Write(jsonResp)
+		}
+
+		fmt.Fprintf(os.Stderr, "Error happened in play. Err: %s\n", err)
+		return
 	}
 
 	resp := dominoPlayToResponse(*play)
