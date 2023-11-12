@@ -1,20 +1,20 @@
 {
     "client": "Thunder Client",
     "collectionName": "Domino Desafio",
-    "dateExported": "2023-11-12T10:51:05.125Z",
+    "dateExported": "2023-11-12T17:16:38.236Z",
     "version": "1.1",
     "folders": [],
     "requests": [
         {
-            "_id": "30cb108d-6433-4386-b9d3-3cc5e90ad7ba",
-            "colId": "7004c32a-8790-4b10-b77a-2cc0f41b835a",
+            "_id": "2aa003d2-8f45-4802-8040-a8f2d3535a3a",
+            "colId": "da160324-d681-41f7-86a1-2e456383c1ca",
             "containerId": "",
             "name": "Dominoes",
             "url": "http://localhost:8080",
-            "method": "GET",
+            "method": "POST",
             "sortNum": 10000,
-            "created": "2023-11-12T00:36:28.635Z",
-            "modified": "2023-11-12T10:48:22.609Z",
+            "created": "2023-11-12T17:15:56.561Z",
+            "modified": "2023-11-12T17:16:07.877Z",
             "headers": [
                 {
                     "name": "Content-Type",
@@ -30,15 +30,15 @@
             "tests": []
         },
         {
-            "_id": "bc2508f8-8d39-4f13-986d-641dad9d5ccc",
-            "colId": "7004c32a-8790-4b10-b77a-2cc0f41b835a",
+            "_id": "3807130a-4bbf-4cc8-9e7f-6d6473742300",
+            "colId": "da160324-d681-41f7-86a1-2e456383c1ca",
             "containerId": "",
             "name": "Dominoes2",
             "url": "http://localhost:8080",
-            "method": "GET",
+            "method": "POST",
             "sortNum": 20000,
-            "created": "2023-11-12T10:47:56.029Z",
-            "modified": "2023-11-12T10:47:56.029Z",
+            "created": "2023-11-12T17:15:56.562Z",
+            "modified": "2023-11-12T17:16:16.501Z",
             "headers": [
                 {
                     "name": "Content-Type",
