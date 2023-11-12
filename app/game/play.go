@@ -2,6 +2,7 @@ package game
 
 import (
 	"crypto/rand"
+	"errors"
 	"log"
 	"math/big"
 	mrand "math/rand"
@@ -25,7 +26,7 @@ func (t *nodeDomino) Dominoes() []models.Domino {
 var hand []models.Domino
 var plays []models.DominoPlayWithPass
 var states []models.DominoGameState
-var otherPlayersHasNot map[int]map[int]bool
+var unavailableBones map[int]map[int]bool
 var player int
 var node *nodeDomino
 
@@ -54,12 +55,29 @@ func cryptoRandSecure(max int64) int64 {
 	return nBig.Int64()
 }
 
-func Play(state *models.DominoGameState) models.DominoPlayWithPass {
+func Play(state *models.DominoGameState) (*models.DominoPlayWithPass, error) {
 	states = append(states, *state)
 	hand = append(hand, state.Hand...)
 	sort.Slice(hand, func(i, j int) bool {
 		return hand[i].X+hand[i].Y >= hand[j].X+hand[j].Y
 	})
+	plays = make([]models.DominoPlayWithPass, 0, len(state.Plays))
+
+	for _, play := range state.Plays {
+		if play.PlayerPosition != player {
+			continue
+		}
+
+		plays = append(plays, models.DominoPlayWithPass{
+			PlayerPosition: player,
+			Bone:           &play.Bone,
+			Reversed:       play.Reversed,
+		})
+		// 	plays = append(plays, &models.DominoPlayWithPass{ PlayerPosition: player,
+		// Bone: &models.DominoPlay{}
+		// )
+
+	}
 
 	if len(state.Plays) > 0 {
 		intermediateStates(state)
@@ -70,10 +88,29 @@ func Play(state *models.DominoGameState) models.DominoPlayWithPass {
 		plays = append(plays, initialize(state))
 	}
 
-	return plays[len(plays)-1]
+	if player != state.PlayerPosition {
+		return nil, errors.New("not my turn")
+	}
+
+	return &plays[len(plays)-1], nil
 }
 
 func onGoingPlay(state *models.DominoGameState) models.DominoPlayWithPass {
+	currentPlay := state.Plays[len(state.Plays)-1]
+	hasCurrentBone := false
+	for _, h := range state.Hand {
+		if h.CanGlue(currentPlay.Bone) {
+			hasCurrentBone = true
+			break
+		}
+	}
+
+	if !hasCurrentBone {
+		return models.DominoPlayWithPass{
+			PlayerPosition: player,
+		}
+	}
+
 	// TODO: implementar lógica de jogo
 	return models.DominoPlayWithPass{
 		PlayerPosition: state.PlayerPosition,
@@ -110,8 +147,8 @@ func intermediateStates(state *models.DominoGameState) {
 			playerPassed := i + 1
 
 			for _, bone := range node.Dominoes() {
-				otherPlayersHasNot[playerPassed][bone.X] = true
-				otherPlayersHasNot[playerPassed][bone.Y] = true
+				unavailableBones[playerPassed][bone.X] = true
+				unavailableBones[playerPassed][bone.Y] = true
 			}
 		}
 	}

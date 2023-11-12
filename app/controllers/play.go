@@ -42,7 +42,15 @@ func PlayHandler(w http.ResponseWriter, r *http.Request) {
 
 	domino := playRequestToDomino(&request)
 
-	resp := dominoPlayToResponse(game.Play(domino))
+	play, err := game.Play(domino)
+	if err != nil {
+
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		log.Fatalf("Error happened in play. Err: %s", err)
+	}
+
+	resp := dominoPlayToResponse(*play)
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
