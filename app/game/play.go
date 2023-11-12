@@ -59,7 +59,7 @@ func Play(state *models.DominoGameState) (*models.DominoPlayWithPass, error) {
 	states = append(states, *state)
 	hand = append(hand, state.Hand...)
 	sort.Slice(hand, func(i, j int) bool {
-		return hand[i].X+hand[i].Y >= hand[j].X+hand[j].Y
+		return hand[i].Sum() >= hand[j].Sum()
 	})
 	plays = make([]models.DominoPlayWithPass, 0, len(state.Plays))
 
@@ -79,47 +79,58 @@ func Play(state *models.DominoGameState) (*models.DominoPlayWithPass, error) {
 
 	}
 
+	const notMyTurnMsg = "not my turn"
+
 	if len(state.Plays) > 0 {
 		intermediateStates(state)
-		onGoingGameplay := onGoingPlay(state)
-
-		plays = append(plays, onGoingGameplay)
+		if player != state.PlayerPosition {
+			return nil, errors.New(notMyTurnMsg)
+		}
+		plays = append(plays, midgameDecision(state))
 	} else {
+		if player != state.PlayerPosition {
+			return nil, errors.New(notMyTurnMsg)
+		}
 		plays = append(plays, initialize(state))
-	}
-
-	if player != state.PlayerPosition {
-		return nil, errors.New("not my turn")
 	}
 
 	return &plays[len(plays)-1], nil
 }
 
-func onGoingPlay(state *models.DominoGameState) models.DominoPlayWithPass {
-	currentPlay := state.Plays[len(state.Plays)-1]
-	hasCurrentBone := false
-	for _, h := range state.Hand {
-		if h.CanGlue(currentPlay.Bone) {
-			hasCurrentBone = true
-			break
-		}
+func midgameDecision(state *models.DominoGameState) models.DominoPlayWithPass {
+	var edges *nodeDomino
+	if node != nil {
+		edges = node
 	}
 
-	if !hasCurrentBone {
-		return models.DominoPlayWithPass{
-			PlayerPosition: player,
-		}
+	left, right := handCanPlayThisTurn(edges)
+	canPlayBoth := left != nil && right != nil
+	if !canPlayBoth {
+		return oneSidedPlay(left, right)
 	}
 
-	// TODO: implementar lógica de jogo
+	if node == nil {
+		plays := [...]models.DominoPlayWithPass{
+			playFromEdge(left, node.Left),
+			playFromEdge(right, node.Right),
+		}
+		return maximizedPlay(plays[:]...)
+	}
+
+	// TODO: implementar decisão
 	return models.DominoPlayWithPass{
 		PlayerPosition: state.PlayerPosition,
-		Bone: &models.Domino{
-			X: 6,
-			Y: 6,
-		},
-		Reversed: false,
+		Bone:           &hand[0],
+		Reversed:       false,
 	}
+}
+
+func maximizedPlay(plays ...models.DominoPlayWithPass) models.DominoPlayWithPass {
+	sort.Slice(plays, func(i, j int) bool {
+		return plays[i].Bone.Sum() >= plays[j].Bone.Sum()
+	})
+
+	return plays[0]
 }
 
 func intermediateStates(state *models.DominoGameState) {
@@ -178,4 +189,64 @@ func determineLeafs(state *models.DominoGameState) *nodeDomino {
 		}
 	}
 
+}
+
+func handCanPlayThisTurn(edges *nodeDomino) (*models.Domino, *models.Domino) {
+	if edges == nil {
+		return nil, nil
+	}
+
+	var boneGlueLeft, boneGlueRight *models.Domino
+	for _, h := range hand {
+		if h.CanGlue(node.Left) {
+			boneGlueLeft = &models.Domino{
+				X: h.X,
+				Y: h.Y,
+			}
+		}
+
+		if h.CanGlue(node.Right) {
+			boneGlueRight = &models.Domino{
+				X: h.X,
+				Y: h.Y,
+			}
+		}
+
+		if boneGlueLeft != nil && boneGlueRight != nil {
+			break
+		}
+	}
+
+	hasCurrentBone := boneGlueLeft != nil || boneGlueRight != nil
+
+	// passed
+	if !hasCurrentBone {
+		for _, bone := range [...]models.Domino{node.Left, node.Right} {
+			unavailableBones[player][bone.X] = true
+			unavailableBones[player][bone.Y] = true
+		}
+
+		return nil, nil
+	}
+	return boneGlueLeft, boneGlueRight
+}
+
+func oneSidedPlay(left *models.Domino, right *models.Domino) models.DominoPlayWithPass {
+	if left != nil {
+		return playFromEdge(left, node.Left)
+	}
+
+	return models.DominoPlayWithPass{
+		PlayerPosition: player,
+		Bone:           right,
+		Reversed:       right.Y == node.Right.X,
+	}
+}
+
+func playFromEdge(bone *models.Domino, edge models.Domino) models.DominoPlayWithPass {
+	return models.DominoPlayWithPass{
+		PlayerPosition: player,
+		Bone:           bone,
+		Reversed:       bone.Y == edge.X,
+	}
 }
