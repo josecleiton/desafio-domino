@@ -12,15 +12,12 @@ import (
 )
 
 type nodeDomino struct {
-	Left  models.Domino
-	Right models.Domino
+	Left  models.DominoInTable
+	Right models.DominoInTable
 }
 
 func (t *nodeDomino) Dominoes() []models.Domino {
-	return []models.Domino{
-		t.Left,
-		t.Right,
-	}
+	return []models.Domino{t.Left.Domino, t.Right.Domino}
 }
 
 var hand []models.Domino
@@ -38,11 +35,13 @@ func initialize(state *models.DominoGameState) models.DominoPlayWithPass {
 
 	return models.DominoPlayWithPass{
 		PlayerPosition: state.PlayerPosition,
-		Bone: &models.Domino{
-			X: hand[0].X,
-			Y: hand[0].Y,
+		Bone: &models.DominoInTable{
+			Reversed: cryptoRandSecure(1024)&1 == 0,
+			Domino: models.Domino{
+				X: hand[0].X,
+				Y: hand[0].Y,
+			},
 		},
-		Reversed: cryptoRandSecure(1024)&1 == 0,
 	}
 }
 
@@ -71,7 +70,6 @@ func Play(state *models.DominoGameState) (*models.DominoPlayWithPass, error) {
 		plays = append(plays, models.DominoPlayWithPass{
 			PlayerPosition: player,
 			Bone:           &play.Bone,
-			Reversed:       play.Reversed,
 		})
 
 	}
@@ -112,8 +110,10 @@ func midgameDecision(state *models.DominoGameState) models.DominoPlayWithPass {
 	// TODO: implementar decisão
 	return models.DominoPlayWithPass{
 		PlayerPosition: state.PlayerPosition,
-		Bone:           &hand[0],
-		Reversed:       false,
+		Bone: &models.DominoInTable{
+			Reversed: false,
+			Domino:   hand[0],
+		},
 	}
 }
 
@@ -135,7 +135,7 @@ func intermediateStates(state *models.DominoGameState) {
 
 	// update node with both edges of the domino map
 	if node != nil && currentPlay.Bone != node.Left && currentPlay.Bone != node.Right {
-		if currentPlay.Bone.CanGlue(node.Right) && currentPlay.Reversed {
+		if node.Right.CanGlue(currentPlay.Bone.Domino) {
 			node.Right = currentPlay.Bone
 		} else {
 			node.Left = currentPlay.Bone
@@ -167,8 +167,8 @@ func determineLeafs(state *models.DominoGameState) *nodeDomino {
 	secondPlay := state.Plays[1]
 	thirdPlay := state.Plays[2]
 
-	thirdCanGlueSt := thirdPlay.Bone.CanGlue(firstPlay.Bone)
-	thirdCanGlueNd := thirdPlay.Bone.CanGlue(secondPlay.Bone)
+	thirdCanGlueSt := thirdPlay.CanGlue(firstPlay.Bone.Domino)
+	thirdCanGlueNd := thirdPlay.CanGlue(secondPlay.Bone.Domino)
 	if thirdCanGlueSt && !thirdCanGlueNd {
 		return &nodeDomino{
 			Left:  secondPlay.Bone,
@@ -190,14 +190,14 @@ func handCanPlayThisTurn(edges *nodeDomino) (*models.Domino, *models.Domino) {
 
 	var boneGlueLeft, boneGlueRight *models.Domino
 	for _, h := range hand {
-		if h.CanGlue(node.Left) {
+		if node.Left.CanGlue(h) {
 			boneGlueLeft = &models.Domino{
 				X: h.X,
 				Y: h.Y,
 			}
 		}
 
-		if h.CanGlue(node.Right) {
+		if node.Right.CanGlue(h) {
 			boneGlueRight = &models.Domino{
 				X: h.X,
 				Y: h.Y,
@@ -213,7 +213,7 @@ func handCanPlayThisTurn(edges *nodeDomino) (*models.Domino, *models.Domino) {
 
 	// passed
 	if !hasCurrentBone {
-		for _, bone := range [...]models.Domino{node.Left, node.Right} {
+		for _, bone := range node.Dominoes() {
 			unavailableBones[player][bone.X] = true
 			unavailableBones[player][bone.Y] = true
 		}
@@ -230,15 +230,22 @@ func oneSidedPlay(left *models.Domino, right *models.Domino) models.DominoPlayWi
 
 	return models.DominoPlayWithPass{
 		PlayerPosition: player,
-		Bone:           right,
-		Reversed:       right.Y == node.Right.X,
+		Bone: &models.DominoInTable{
+			Domino:   *right,
+			Reversed: right.Y == node.Right.X,
+		},
 	}
 }
 
-func playFromEdge(bone *models.Domino, edge models.Domino) models.DominoPlayWithPass {
+func playFromEdge(bone *models.Domino, edge models.DominoInTable) models.DominoPlayWithPass {
 	return models.DominoPlayWithPass{
 		PlayerPosition: player,
-		Bone:           bone,
-		Reversed:       bone.Y == edge.X,
+		Bone: &models.DominoInTable{
+			Domino: models.Domino{
+				X: bone.X,
+				Y: bone.Y,
+			},
+			Reversed: bone.Y == edge.X,
+		},
 	}
 }

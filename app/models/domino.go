@@ -10,6 +10,11 @@ type Domino struct {
 	X, Y int
 }
 
+type DominoInTable struct {
+	Reversed bool
+	Domino
+}
+
 func (d Domino) String() string {
 	return fmt.Sprintf("%d-%d", d.Y, d.X)
 }
@@ -27,6 +32,11 @@ func DominoFromString(s string) Domino {
 	}
 }
 
-func (d Domino) CanGlue(other Domino) bool {
-	return d.X == other.X || d.X == other.Y || d.Y == other.X || d.Y == other.Y
+func (t DominoInTable) CanGlue(d Domino) bool {
+	side := t.X
+	if t.Reversed {
+		side = t.Y
+	}
+
+	return d.X == side || d.Y == side
 }

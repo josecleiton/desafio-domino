@@ -2,14 +2,16 @@ package models
 
 type DominoPlay struct {
 	PlayerPosition int
-	Bone           Domino
-	Reversed       bool
+	Bone           DominoInTable
+}
+
+func (play DominoPlay) CanGlue(d Domino) bool {
+	return play.Bone.CanGlue(d)
 }
 
 type DominoPlayWithPass struct {
 	PlayerPosition int
-	Bone           *Domino
-	Reversed       bool
+	Bone           *DominoInTable
 }
 
 func (play DominoPlayWithPass) Pass() bool {

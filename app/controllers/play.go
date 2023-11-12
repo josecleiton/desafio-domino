@@ -102,8 +102,10 @@ func playRequestToDomino(request *dominoStateRequest) *models.DominoGameState {
 	for _, play := range request.Plays {
 		plays = append(plays, models.DominoPlay{
 			PlayerPosition: play.Player,
-			Bone:           models.DominoFromString(play.Bone),
-			Reversed:       strings.HasPrefix(strings.ToLower(play.Direction), "r"),
+			Bone: models.DominoInTable{
+				Domino:   models.DominoFromString(play.Bone),
+				Reversed: strings.HasPrefix(strings.ToLower(play.Direction), "r"),
+			},
 		})
 	}
 
@@ -126,7 +128,7 @@ func dominoPlayToResponse(dominoPlay models.DominoPlayWithPass) *playStateReques
 		}
 	}
 
-	if dominoPlay.Reversed {
+	if dominoPlay.Bone.Reversed {
 		direction = "direita"
 	}
 

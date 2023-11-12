@@ -17,24 +17,30 @@ func BenchmarkTestPlayGlue(b *testing.B) {
 	plays := []models.DominoPlay{
 		{
 			PlayerPosition: play.PlayerPosition,
-			Bone:           *play.Bone,
-			Reversed:       play.Reversed,
+			Bone: models.DominoInTable{
+				Domino:   play.Bone.Domino,
+				Reversed: play.Bone.Reversed,
+			},
 		},
 		{
 			PlayerPosition: play.PlayerPosition + 1,
-			Bone: models.Domino{
-				X: 5,
-				Y: 4,
+			Bone: models.DominoInTable{
+				Domino: models.Domino{
+					X: 5,
+					Y: 4,
+				},
+				Reversed: false,
 			},
-			Reversed: false,
 		},
 		{
 			PlayerPosition: play.PlayerPosition + 2,
-			Bone: models.Domino{
-				X: 5,
-				Y: 3,
+			Bone: models.DominoInTable{
+				Domino: models.Domino{
+					X: 5,
+					Y: 3,
+				},
+				Reversed: false,
 			},
-			Reversed: false,
 		},
 	}
 
@@ -52,7 +58,7 @@ func BenchmarkTestPlayGlue(b *testing.B) {
 
 	newHand := make([]models.Domino, 0, len(gameStateSt.Hand)-1)
 	for _, bone := range gameStateSt.Hand {
-		if bone != *play.Bone {
+		if bone != play.Bone.Domino {
 			newHand = append(newHand, bone)
 		}
 	}
