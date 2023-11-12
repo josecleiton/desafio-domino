@@ -83,10 +83,6 @@ func Play(state *models.DominoGameState) (*models.DominoPlayWithPass, error) {
 		}
 		plays = append(plays, midgameDecision(state))
 	} else {
-		if player != state.PlayerPosition {
-			return nil, errors.New("not my turn")
-		}
-
 		plays = append(plays, initialize(state))
 	}
 
