@@ -24,9 +24,9 @@ func firstPlay() models.DominoGameState {
 	}
 }
 
-func PlayInitialTest(t *testing.T) {
+func TestPlayInitial(t *testing.T) {
 	firstPlay := firstPlay()
-	if len(firstPlay.Hand) > 0 {
+	if len(firstPlay.Hand) < 1 {
 		t.Fatal("Hand is not empty")
 	}
 
@@ -51,4 +51,71 @@ func PlayInitialTest(t *testing.T) {
 		t.Fatal("Not maximized play")
 	}
 
+}
+
+func TestPlayGlue(t *testing.T) {
+	gameStateSt := firstPlay()
+	play, err := game.Play(&gameStateSt)
+	if err != nil {
+		t.Fatal("Error on first play")
+	}
+
+	plays := []models.DominoPlay{
+		{
+			PlayerPosition: play.PlayerPosition,
+			Bone:           *play.Bone,
+			Reversed:       play.Reversed,
+		},
+		{
+			PlayerPosition: play.PlayerPosition + 1,
+			Bone: models.Domino{
+				X: 5,
+				Y: 4,
+			},
+			Reversed: false,
+		},
+		{
+			PlayerPosition: play.PlayerPosition + 2,
+			Bone: models.Domino{
+				X: 5,
+				Y: 3,
+			},
+			Reversed: false,
+		},
+	}
+
+	table := make(map[int]map[int]bool, len(plays))
+	for _, play := range plays {
+		if _, ok := table[play.Bone.X]; !ok {
+			table[play.Bone.X] = make(map[int]bool, len(plays))
+		}
+		if _, ok := table[play.Bone.Y]; !ok {
+			table[play.Bone.Y] = make(map[int]bool, len(plays))
+		}
+		table[play.Bone.X][play.Bone.Y] = true
+		table[play.Bone.Y][play.Bone.X] = true
+	}
+
+	newHand := make([]models.Domino, 0, len(gameStateSt.Hand)-1)
+	for _, bone := range gameStateSt.Hand {
+		if bone != *play.Bone {
+			newHand = append(newHand, bone)
+		}
+	}
+
+	gameStateNd := models.DominoGameState{
+		PlayerPosition: play.PlayerPosition,
+		Plays:          plays,
+		Hand:           newHand,
+		Table:          table,
+	}
+
+	play, err = game.Play(&gameStateNd)
+	if err != nil {
+		t.Fatal("Error on play")
+	}
+
+	if play.Pass() {
+		t.Fatal("Pass is not allowed on glue play")
+	}
 }
