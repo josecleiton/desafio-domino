@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/josecleiton/domino/app/game"
 	"github.com/josecleiton/domino/app/models"
@@ -18,16 +17,23 @@ type gameStateRequest struct {
 	Plays  []playStateRequest `json:"jogadas"`
 }
 
+type externalDirection string
+
+const (
+	Left  externalDirection = "esquerda"
+	Right externalDirection = "direita"
+)
+
 type playStateRequest struct {
-	Player    int    `json:"jogador"`
-	Bone      string `json:"pedra"`
-	Direction string `json:"lado"`
+	Player    int               `json:"jogador"`
+	Bone      string            `json:"pedra"`
+	Direction externalDirection `json:"lado"`
 }
 
 type playStateResponse struct {
-	Player    int     `json:"jogador"`
-	Bone      *string `json:"pedra"`
-	Direction *string `json:"lado"`
+	Player    int                `json:"jogador"`
+	Bone      *string            `json:"pedra"`
+	Direction *externalDirection `json:"lado"`
 }
 
 func GameHandler(w http.ResponseWriter, r *http.Request) {
@@ -133,7 +139,7 @@ func gameRequestToDomain(request *gameStateRequest) (*models.DominoGameState, er
 			PlayerPosition: play.Player,
 			Bone: models.DominoInTable{
 				Domino:   *domino,
-				Reversed: strings.HasPrefix(strings.ToLower(play.Direction), "d"),
+				Reversed: play.Direction == Right,
 			},
 		})
 	}
@@ -151,10 +157,10 @@ func dominoPlayToResponse(dominoPlay models.DominoPlayWithPass) *playStateRespon
 		return &playStateResponse{Player: dominoPlay.PlayerPosition}
 	}
 
-	direction := "esquerda"
+	direction := Left
 
 	if dominoPlay.Bone.Reversed {
-		direction = "direita"
+		direction = Right
 	}
 
 	bone := dominoPlay.Bone.Domino.String()
