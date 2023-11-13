@@ -2,7 +2,6 @@ package game
 
 import (
 	"crypto/rand"
-	"errors"
 	"log"
 	"math/big"
 	mrand "math/rand"
@@ -69,50 +68,39 @@ func cryptoRandSecure(max int64) int64 {
 	return nBig.Int64()
 }
 
-func Play(state *models.DominoGameState) (*models.DominoPlayWithPass, error) {
+func Play(state *models.DominoGameState) *models.DominoPlayWithPass {
 	states = append(states, *state)
 	hand = append(hand, state.Hand...)
 	sort.Slice(hand, func(i, j int) bool {
 		return hand[i].Sum() >= hand[j].Sum()
 	})
-	plays = make([]models.DominoPlayWithPass, 0, len(state.Plays))
-
-	for _, play := range state.Plays {
-		if play.PlayerPosition != player {
-			continue
-		}
-
-		plays = append(plays, models.DominoPlayWithPass{
-			PlayerPosition: player,
-			Bone:           &play.Bone,
-		})
-
-	}
 
 	if len(state.Plays) > 0 {
-		alreadyPlayedInThisSession := false
+		plays = make([]models.DominoPlayWithPass, 0, len(state.Plays))
+
 		for _, play := range state.Plays {
-			if play.PlayerPosition == state.PlayerPosition {
-				alreadyPlayedInThisSession = true
-				break
+			if play.PlayerPosition != state.PlayerPosition {
+				continue
 			}
+
+			plays = append(plays, models.DominoPlayWithPass{
+				PlayerPosition: player,
+				Bone:           &play.Bone,
+			})
+
 		}
 
-		if !alreadyPlayedInThisSession {
+		if len(plays) == 0 {
 			initialize(state)
 		}
 
 		intermediateStates(state)
-		if player != state.PlayerPosition {
-			return nil, errors.New("not my turn")
-		}
-
 		plays = append(plays, midgameDecision(state))
 	} else {
 		plays = append(plays, initialPlay(state))
 	}
 
-	return &plays[len(plays)-1], nil
+	return &plays[len(plays)-1]
 }
 
 func midgameDecision(state *models.DominoGameState) models.DominoPlayWithPass {

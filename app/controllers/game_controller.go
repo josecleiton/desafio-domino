@@ -48,28 +48,7 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 
 	domino := gameRequestToDomain(&request)
 
-	play, err := game.Play(domino)
-	if err != nil {
-		const status = http.StatusBadRequest
-		errorMap := map[string]interface{}{
-			"error":  err.Error(),
-			"status": http.StatusText(status),
-			"code":   status,
-		}
-
-		w.WriteHeader(status)
-
-		jsonResp, marshalErr := json.Marshal(errorMap)
-		if marshalErr != nil {
-			log.Printf("Error happened in JSON marshal. Err: %s\n", marshalErr)
-			w.Write([]byte(err.Error()))
-		} else {
-			w.Write(jsonResp)
-		}
-
-		log.Printf("Error happened in play. Err: %s\n", err)
-		return
-	}
+	play := game.Play(domino)
 
 	resp := dominoPlayToResponse(*play)
 	jsonResp, err := json.Marshal(resp)

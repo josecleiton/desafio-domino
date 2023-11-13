@@ -9,10 +9,7 @@ import (
 
 func BenchmarkTestPlayGlue(b *testing.B) {
 	gameStateSt := firstPlay()
-	play, err := game.Play(&gameStateSt)
-	if err != nil {
-		b.Fatal("Error on first play")
-	}
+	play := game.Play(&gameStateSt)
 
 	plays := []models.DominoPlay{
 		{
@@ -70,10 +67,7 @@ func BenchmarkTestPlayGlue(b *testing.B) {
 		Table:          table,
 	}
 
-	play, err = game.Play(&gameStateNd)
-	if err != nil {
-		b.Fatal("Error on play")
-	}
+	play = game.Play(&gameStateNd)
 
 	if play.Pass() {
 		b.Fatal("Pass is not allowed on glue play")

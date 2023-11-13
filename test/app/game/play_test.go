@@ -30,11 +30,7 @@ func TestPlayInitial(t *testing.T) {
 		t.Fatal("Hand is not empty")
 	}
 
-	play, err := game.Play(&firstPlay)
-
-	if err != nil {
-		t.Fatal("Error on play")
-	}
+	play := game.Play(&firstPlay)
 
 	if play.Pass() {
 		t.Fatal("Pass is not allowed on first play")
@@ -55,10 +51,7 @@ func TestPlayInitial(t *testing.T) {
 
 func TestPlayGlue(t *testing.T) {
 	gameStateSt := firstPlay()
-	play, err := game.Play(&gameStateSt)
-	if err != nil {
-		t.Fatal("Error on first play")
-	}
+	play := game.Play(&gameStateSt)
 
 	plays := []models.DominoPlay{
 		{
@@ -116,10 +109,7 @@ func TestPlayGlue(t *testing.T) {
 		Table:          table,
 	}
 
-	play, err = game.Play(&gameStateNd)
-	if err != nil {
-		t.Fatal("Error on play")
-	}
+	play = game.Play(&gameStateNd)
 
 	if play.Pass() {
 		t.Fatal("Pass is not allowed on glue play")
