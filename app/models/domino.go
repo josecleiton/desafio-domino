@@ -4,6 +4,7 @@ import "fmt"
 
 const DominoLength = 28
 const DominoUniqueBones = 7
+const DominoHandLength = 7
 
 type Domino struct {
 	X, Y int
