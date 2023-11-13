@@ -465,7 +465,7 @@ func playFromEdge(bone models.DominoInTable, edge *models.DominoInTable) playPas
 }
 
 func getDuo() int {
-	return ((player + 1) % models.DominoPlayerLength) + 1
+	return ((player + 1) % models.DominoMaxPlayer) + 1
 }
 
 func countBones(bone models.DominoInTable, state *models.DominoGameState) int {

@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -46,7 +47,28 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	domino := gameRequestToDomain(&request)
+	domino, err := gameRequestToDomain(&request)
+	if err != nil {
+		const status = http.StatusBadRequest
+		errorMap := map[string]interface{}{
+			"error":  err.Error(),
+			"status": http.StatusText(status),
+			"code":   status,
+		}
+
+		w.WriteHeader(status)
+
+		jsonResp, marshalErr := json.Marshal(errorMap)
+		if marshalErr != nil {
+			log.Printf("Error happened in JSON marshal. Err: %s\n", marshalErr)
+			w.Write([]byte(err.Error()))
+		} else {
+			w.Write(jsonResp)
+		}
+
+		log.Printf("Error happened in play. Err: %s\n", err)
+		return
+	}
 
 	play := game.Play(domino)
 
@@ -61,17 +83,35 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonResp)
 }
 
-func gameRequestToDomain(request *gameStateRequest) *models.DominoGameState {
+func gameRequestToDomain(request *gameStateRequest) (*models.DominoGameState, error) {
+	if request.Player < models.DominoMinPlayer || request.Player > models.DominoMaxPlayer {
+		return nil, fmt.Errorf(
+			"player must be between %d and %d, not %d",
+			models.DominoMinPlayer,
+			models.DominoMaxPlayer,
+			request.Player,
+		)
+	}
+
 	hand := make([]models.Domino, 0, len(request.Hand))
 	table := make(map[int]map[int]bool, models.DominoUniqueBones)
 	plays := make([]models.DominoPlay, 0, len(request.Plays))
 
 	for _, bone := range request.Hand {
-		hand = append(hand, models.DominoFromString(bone))
+		domino, err := models.DominoFromString(bone)
+		if err != nil {
+			return nil, err
+		}
+
+		hand = append(hand, *domino)
 	}
 
 	for _, bone := range request.Table {
-		domino := models.DominoFromString(bone)
+		domino, err := models.DominoFromString(bone)
+		if err != nil {
+			return nil, err
+		}
+
 		if _, ok := table[domino.X]; !ok {
 			table[domino.X] = make(map[int]bool, models.DominoUniqueBones)
 		}
@@ -84,10 +124,15 @@ func gameRequestToDomain(request *gameStateRequest) *models.DominoGameState {
 	}
 
 	for _, play := range request.Plays {
+		domino, err := models.DominoFromString(play.Bone)
+		if err != nil {
+			return nil, err
+		}
+
 		plays = append(plays, models.DominoPlay{
 			PlayerPosition: play.Player,
 			Bone: models.DominoInTable{
-				Domino:   models.DominoFromString(play.Bone),
+				Domino:   *domino,
 				Reversed: strings.HasPrefix(strings.ToLower(play.Direction), "d"),
 			},
 		})
@@ -98,7 +143,7 @@ func gameRequestToDomain(request *gameStateRequest) *models.DominoGameState {
 		Hand:           hand,
 		Table:          table,
 		Plays:          plays,
-	}
+	}, nil
 }
 
 func dominoPlayToResponse(dominoPlay models.DominoPlayWithPass) *playStateResponse {
