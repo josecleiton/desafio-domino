@@ -39,12 +39,15 @@ var unavailableBonesMutex sync.Mutex
 var player int
 var node *nodeDomino
 
-func initialize(state *models.DominoGameState) models.DominoPlayWithPass {
+func initialize(state *models.DominoGameState) {
 	player = state.PlayerPosition
 	clear(plays)
 	clear(states)
 	node = nil
+}
 
+func initialPlay(state *models.DominoGameState) models.DominoPlayWithPass {
+	initialize(state)
 	return models.DominoPlayWithPass{
 		PlayerPosition: state.PlayerPosition,
 		Bone: &models.DominoInTable{
@@ -87,13 +90,26 @@ func Play(state *models.DominoGameState) (*models.DominoPlayWithPass, error) {
 	}
 
 	if len(state.Plays) > 0 {
+		alreadyPlayedInThisSession := false
+		for _, play := range state.Plays {
+			if play.PlayerPosition == state.PlayerPosition {
+				alreadyPlayedInThisSession = true
+				break
+			}
+		}
+
+		if !alreadyPlayedInThisSession {
+			initialize(state)
+		}
+
 		intermediateStates(state)
 		if player != state.PlayerPosition {
 			return nil, errors.New("not my turn")
 		}
+
 		plays = append(plays, midgameDecision(state))
 	} else {
-		plays = append(plays, initialize(state))
+		plays = append(plays, initialPlay(state))
 	}
 
 	return &plays[len(plays)-1], nil
