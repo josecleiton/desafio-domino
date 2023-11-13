@@ -269,6 +269,7 @@ func midgameDecision(state *models.DominoGameState) models.DominoPlayWithPass {
 		}
 	}
 
+	log.Println("Something went wrong, no play found")
 	return models.DominoPlayWithPass{
 		PlayerPosition: player,
 	}

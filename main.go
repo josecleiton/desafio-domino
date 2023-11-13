@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 
@@ -13,7 +14,7 @@ func main() {
 
 	port := ":8080"
 
-	fmt.Printf("Server started at http://localhost%s\n", port)
+	log.Printf("Server started at http://localhost%s\n", port)
 
 	err := http.ListenAndServe(port, nil)
 

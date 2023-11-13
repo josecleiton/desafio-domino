@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/josecleiton/domino/app/game"
@@ -62,7 +61,7 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 			w.Write(jsonResp)
 		}
 
-		fmt.Fprintf(os.Stderr, "Error happened in play. Err: %s\n", err)
+		log.Printf("Error happened in play. Err: %s\n", err)
 		return
 	}
 
