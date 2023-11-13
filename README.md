@@ -30,6 +30,12 @@ Você deve implementar um BOT que será o cérebro de um jogador. Como o jogo é
 
 A interface do seu BOT é simples: você deve implementar um servidor HTTP que escute na porta 8000 e tenha um único endpoint `POST /` que recebe um JSON com o estado atual do jogo e retorna um JSON com a jogada que o BOT deseja fazer. O estado do jogo é um JSON com a seguinte estrutura:
 
+```
+ [5 - 5]
+ esq: [5 - 4] 
+ dir: [5 - 3]
+```
+
 ```json
 {
   "jogador": 3,

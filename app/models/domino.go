@@ -13,7 +13,7 @@ type Domino struct {
 }
 
 type DominoInTable struct {
-	Reversed bool
+	Edge Edge
 	Domino
 }
 
@@ -60,29 +60,6 @@ func DominoFromString(s string) (*Domino, error) {
 	}, nil
 }
 
-func (t DominoInTable) CanGlue(d Domino) bool {
-	side := t.Side()
-	return d.X == side || d.Y == side
-}
-
-func (t DominoInTable) Glue(d Domino) *DominoInTable {
-	if !t.CanGlue(d) {
-		return nil
-	}
-
-	return &DominoInTable{
-		Domino: Domino{
-			X: d.X,
-			Y: d.Y,
-		},
-		Reversed: d.X == t.Side(),
-	}
-}
-
 func (t DominoInTable) Side() int {
-	if t.Reversed {
-		return t.X
-	}
-
 	return t.Y
 }

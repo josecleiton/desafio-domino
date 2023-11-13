@@ -1,13 +1,15 @@
 package models
 
+import "github.com/josecleiton/domino/app/utils"
+
 const DominoMaxPlayer = 4
 const DominoMinPlayer = 1
 
 type Edge string
 
 const (
-	Left  Edge = "left"
-	Right Edge = "right"
+	LeftEdge  Edge = "left"
+	RightEdge Edge = "right"
 )
 
 type DominoPlay struct {
@@ -20,15 +22,15 @@ type DominoPlayWithPass struct {
 	Bone           *DominoInTable
 }
 
+type Plays map[Edge]*utils.LinkedList[DominoPlay]
+type TableBone map[int]bool
+type Table map[int]TableBone
+
 type DominoGameState struct {
 	PlayerPosition int
 	Hand           []Domino
-	Table          map[int]map[int]bool
-	Plays          []DominoPlay
-}
-
-func (play DominoPlay) CanGlue(d Domino) bool {
-	return play.Bone.CanGlue(d)
+	Table          Table
+	Plays          Plays
 }
 
 func (play DominoPlayWithPass) Pass() bool {

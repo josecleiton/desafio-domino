@@ -5,52 +5,56 @@ import (
 
 	"github.com/josecleiton/domino/app/game"
 	"github.com/josecleiton/domino/app/models"
+	"github.com/josecleiton/domino/app/utils"
 )
 
 func BenchmarkTestPlayGlue(b *testing.B) {
 	gameStateSt := firstPlay()
 	play := game.Play(&gameStateSt)
 
-	plays := []models.DominoPlay{
-		{
-			PlayerPosition: play.PlayerPosition,
-			Bone: models.DominoInTable{
-				Domino:   play.Bone.Domino,
-				Reversed: play.Bone.Reversed,
+	leftEdge, rightEdge :=
+		utils.LinkedList[models.DominoPlay]{},
+		utils.LinkedList[models.DominoPlay]{}
+
+	leftEdge.Push(&models.DominoPlay{
+		PlayerPosition: play.PlayerPosition + 1,
+		Bone: models.DominoInTable{
+			Edge: models.LeftEdge,
+			Domino: models.Domino{
+				X: 5,
+				Y: 4,
 			},
 		},
-		{
-			PlayerPosition: play.PlayerPosition + 1,
-			Bone: models.DominoInTable{
-				Domino: models.Domino{
-					X: 5,
-					Y: 4,
-				},
-				Reversed: false,
+	})
+	rightEdge.Push(&models.DominoPlay{
+		PlayerPosition: play.PlayerPosition + 2,
+		Bone: models.DominoInTable{
+			Edge: models.RightEdge,
+			Domino: models.Domino{
+				X: 5,
+				Y: 3,
 			},
 		},
-		{
-			PlayerPosition: play.PlayerPosition + 2,
-			Bone: models.DominoInTable{
-				Domino: models.Domino{
-					X: 5,
-					Y: 3,
-				},
-				Reversed: false,
-			},
-		},
+	})
+	plays := models.Plays{
+		models.LeftEdge:  &leftEdge,
+		models.RightEdge: &rightEdge,
 	}
 
-	table := make(map[int]map[int]bool, len(plays))
-	for _, play := range plays {
-		if _, ok := table[play.Bone.X]; !ok {
-			table[play.Bone.X] = make(map[int]bool, len(plays))
+	table := make(models.Table, len(plays))
+	for _, v := range plays {
+		head := v.Head()
+		for current := &head; current != nil; current = current.Next {
+			bone := current.Data.Bone
+			for _, boneSide := range []int{bone.X, bone.Y} {
+				if _, ok := table[boneSide]; !ok {
+					table[boneSide] = make(models.TableBone, len(plays))
+				}
+			}
+
+			table[bone.X][bone.Y] = true
+			table[bone.Y][bone.X] = true
 		}
-		if _, ok := table[play.Bone.Y]; !ok {
-			table[play.Bone.Y] = make(map[int]bool, len(plays))
-		}
-		table[play.Bone.X][play.Bone.Y] = true
-		table[play.Bone.Y][play.Bone.X] = true
 	}
 
 	newHand := make([]models.Domino, 0, len(gameStateSt.Hand)-1)
