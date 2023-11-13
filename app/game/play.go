@@ -38,6 +38,41 @@ var unavailableBonesMutex sync.Mutex
 var player int
 var node *nodeDomino
 
+func Play(state *models.DominoGameState) *models.DominoPlayWithPass {
+	states = append(states, *state)
+	hand = append(hand, state.Hand...)
+	sort.Slice(hand, func(i, j int) bool {
+		return hand[i].Sum() >= hand[j].Sum()
+	})
+
+	if len(state.Plays) > 0 {
+		plays = make([]models.DominoPlayWithPass, 0, len(state.Plays))
+
+		for _, play := range state.Plays {
+			if play.PlayerPosition != state.PlayerPosition {
+				continue
+			}
+
+			plays = append(plays, models.DominoPlayWithPass{
+				PlayerPosition: player,
+				Bone:           &play.Bone,
+			})
+
+		}
+
+		if len(plays) == 0 {
+			initialize(state)
+		}
+
+		intermediateStates(state)
+		plays = append(plays, midgamePlay(state))
+	} else {
+		plays = append(plays, initialPlay(state))
+	}
+
+	return &plays[len(plays)-1]
+}
+
 func initialize(state *models.DominoGameState) {
 	player = state.PlayerPosition
 	clear(plays)
@@ -68,42 +103,7 @@ func cryptoRandSecure(max int64) int64 {
 	return nBig.Int64()
 }
 
-func Play(state *models.DominoGameState) *models.DominoPlayWithPass {
-	states = append(states, *state)
-	hand = append(hand, state.Hand...)
-	sort.Slice(hand, func(i, j int) bool {
-		return hand[i].Sum() >= hand[j].Sum()
-	})
-
-	if len(state.Plays) > 0 {
-		plays = make([]models.DominoPlayWithPass, 0, len(state.Plays))
-
-		for _, play := range state.Plays {
-			if play.PlayerPosition != state.PlayerPosition {
-				continue
-			}
-
-			plays = append(plays, models.DominoPlayWithPass{
-				PlayerPosition: player,
-				Bone:           &play.Bone,
-			})
-
-		}
-
-		if len(plays) == 0 {
-			initialize(state)
-		}
-
-		intermediateStates(state)
-		plays = append(plays, midgameDecision(state))
-	} else {
-		plays = append(plays, initialPlay(state))
-	}
-
-	return &plays[len(plays)-1]
-}
-
-func midgameDecision(state *models.DominoGameState) models.DominoPlayWithPass {
+func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 	var edges *nodeDomino
 	if node != nil {
 		edges = node
@@ -226,13 +226,13 @@ func midgameDecision(state *models.DominoGameState) models.DominoPlayWithPass {
 		if len(left) == 1 && leftBonesInGame == models.DominoUniqueBones-1 {
 			play := playFromEdge(right[0], &node.Right)
 			countPlay = &play
+			return
 		}
 
 		rightBonesInGame := countBones(node.Right, state)
 		if len(right) == 1 && rightBonesInGame == models.DominoUniqueBones-1 {
 			play := playFromEdge(left[0], &node.Left)
 			countPlay = &play
-			return
 		}
 	}()
 
