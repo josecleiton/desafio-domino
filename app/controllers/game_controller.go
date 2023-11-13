@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -52,17 +51,18 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 	play, err := game.Play(domino)
 	if err != nil {
 		const status = http.StatusBadRequest
-		errorMap := map[string]string{
+		errorMap := map[string]interface{}{
 			"error":  err.Error(),
 			"status": http.StatusText(status),
-			"code":   fmt.Sprintf("%d", status),
+			"code":   status,
 		}
 
 		w.WriteHeader(status)
 
 		jsonResp, marshalErr := json.Marshal(errorMap)
 		if marshalErr != nil {
-			w.Write([]byte(marshalErr.Error()))
+			log.Printf("Error happened in JSON marshal. Err: %s\n", marshalErr)
+			w.Write([]byte(err.Error()))
 		} else {
 			w.Write(jsonResp)
 		}
