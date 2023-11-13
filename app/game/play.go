@@ -211,13 +211,8 @@ func midgameDecision(state *models.DominoGameState) models.DominoPlayWithPass {
 			edge = &node.Right
 		}
 
-		passedPlay = &playPassWithEdge{
-			DominoPlayWithPass: models.DominoPlayWithPass{
-				PlayerPosition: player,
-				Bone:           maxBone,
-			},
-			Edge: edge,
-		}
+		play := playFromEdge(*maxBone, edge)
+		passedPlay = &play
 	}()
 
 	go func() {
