@@ -4,7 +4,6 @@ import "fmt"
 
 const DominoLength = 28
 const DominoUniqueBones = 7
-const DominoPlayerLength = 4
 
 type Domino struct {
 	X, Y int
@@ -33,10 +32,28 @@ func DominoFromString(s string) Domino {
 }
 
 func (t DominoInTable) CanGlue(d Domino) bool {
-	side := t.X
-	if t.Reversed {
-		side = t.Y
+	side := t.Side()
+	return d.X == side || d.Y == side
+}
+
+func (t DominoInTable) Glue(d Domino) *DominoInTable {
+	if !t.CanGlue(d) {
+		return nil
 	}
 
-	return d.X == side || d.Y == side
+	return &DominoInTable{
+		Domino: Domino{
+			X: d.X,
+			Y: d.Y,
+		},
+		Reversed: d.X == t.Side(),
+	}
+}
+
+func (t DominoInTable) Side() int {
+	if t.Reversed {
+		return t.X
+	}
+
+	return t.Y
 }

@@ -1,5 +1,7 @@
 package models
 
+const DominoPlayerLength = 4
+
 type DominoPlay struct {
 	PlayerPosition int
 	Bone           DominoInTable

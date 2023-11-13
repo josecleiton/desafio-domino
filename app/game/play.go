@@ -7,6 +7,7 @@ import (
 	"math/big"
 	mrand "math/rand"
 	"sort"
+	"sync"
 
 	"github.com/josecleiton/domino/app/models"
 )
@@ -14,6 +15,11 @@ import (
 type nodeDomino struct {
 	Left  models.DominoInTable
 	Right models.DominoInTable
+}
+
+type edgeWithPossibleBones struct {
+	Edge  *models.DominoInTable
+	Bones []models.DominoInTable
 }
 
 func (t *nodeDomino) Dominoes() []models.Domino {
@@ -111,14 +117,95 @@ func midgameDecision(state *models.DominoGameState) models.DominoPlayWithPass {
 		return oneSidedPlay(left, right)
 	}
 
-	// TODO: implementar decisão
-	return models.DominoPlayWithPass{
-		PlayerPosition: state.PlayerPosition,
-		Bone: &models.DominoInTable{
-			Reversed: false,
-			Domino:   hand[0],
-		},
+	var duoPlay, countPlay *models.DominoPlayWithPass
+
+	wg := sync.WaitGroup{}
+
+	go func() {
+		wg.Add(1)
+		defer wg.Done()
+
+		leftEdgeWithPossibleBones, rightEdgeWithPossibleBones := edgeWithPossibleBones{
+			Edge:  &node.Left,
+			Bones: left,
+		}, edgeWithPossibleBones{
+			Edge:  &node.Right,
+			Bones: right,
+		}
+		filteredLeft, filteredRight := duoCanPlayWithBoneGlue(leftEdgeWithPossibleBones, rightEdgeWithPossibleBones)
+
+		// duo cant play with bone glue
+		if len(filteredLeft) == 0 && len(filteredRight) == 0 {
+			leftEdge, rightEdge := duoCanPlayEdge(leftEdgeWithPossibleBones, rightEdgeWithPossibleBones)
+			playsRespectingDuo := make([]models.DominoPlayWithPass, 0, 2)
+
+			if leftEdge != nil {
+				playsRespectingDuo = append(playsRespectingDuo, playFromEdge(right[0], node.Right))
+			}
+
+			if rightEdge != nil {
+				playsRespectingDuo = append(playsRespectingDuo, playFromEdge(left[0], node.Left))
+			}
+
+			maximized := maximizedPlays(playsRespectingDuo)
+
+			duoPlay = &maximized
+		}
+	}()
+
+	go func() {
+		wg.Add(1)
+		defer wg.Done()
+	}()
+
+	wg.Wait()
+}
+
+func maximizedPlays(playsRespectingDuo []models.DominoPlayWithPass) models.DominoPlayWithPass {
+	max := playsRespectingDuo[0]
+	for _, play := range playsRespectingDuo[1:] {
+		if play.Bone.Sum() > max.Bone.Sum() {
+			max = play
+		}
 	}
+
+	return max
+}
+
+func duoCanPlayEdge(leftEdgeWithPossibleBones, rightEdgeWithPossibleBones edgeWithPossibleBones) (*models.DominoInTable, *models.DominoInTable) {
+	leftEdge, rightEdge := leftEdgeWithPossibleBones.Edge, rightEdgeWithPossibleBones.Edge
+	duo := getDuo()
+
+	if v, ok := unavailableBones[duo][leftEdge.Side()]; ok && v {
+		leftEdge = nil
+	}
+
+	if v, ok := unavailableBones[duo][rightEdge.Side()]; ok && v {
+		rightEdge = nil
+	}
+
+	return leftEdge, rightEdge
+}
+
+func duoCanPlayWithBoneGlue(left, right edgeWithPossibleBones) ([]models.DominoInTable, []models.DominoInTable) {
+	duo := getDuo()
+
+	duoLeft := make([]models.DominoInTable, 0, len(left.Bones))
+	duoRight := make([]models.DominoInTable, 0, len(right.Bones))
+
+	for _, bone := range left.Bones {
+		if v, ok := unavailableBones[duo][bone.Side()]; !(ok && v) {
+			duoLeft = append(duoLeft, bone)
+		}
+	}
+
+	for _, bone := range right.Bones {
+		if v, ok := unavailableBones[duo][bone.Side()]; !(ok && v) {
+			duoRight = append(duoRight, bone)
+		}
+	}
+
+	return duoLeft, duoRight
 }
 
 func intermediateStates(state *models.DominoGameState) {
@@ -179,56 +266,49 @@ func determineLeafs(state *models.DominoGameState) *nodeDomino {
 
 }
 
-func handCanPlayThisTurn(edges *nodeDomino) ([]models.Domino, []models.Domino) {
+func handCanPlayThisTurn(edges *nodeDomino) ([]models.DominoInTable, []models.DominoInTable) {
 	if edges == nil {
 		return nil, nil
 	}
 
-	bonesGlueLeft := make([]models.Domino, 0, len(hand))
-	bonesGlueRight := make([]models.Domino, 0, len(hand))
+	bonesGlueLeft := make([]models.DominoInTable, 0, len(hand))
+	bonesGlueRight := make([]models.DominoInTable, 0, len(hand))
 	for _, h := range hand {
-		if node.Left.CanGlue(h) {
-			bonesGlueLeft = append(bonesGlueLeft, models.Domino{
-				X: h.X,
-				Y: h.Y,
-			})
+
+		if n := node.Left.Glue(h); n != nil {
+			bonesGlueLeft = append(bonesGlueLeft, *n)
 		}
 
-		if node.Right.CanGlue(h) {
-			bonesGlueRight = append(bonesGlueRight, models.Domino{
-				X: h.X,
-				Y: h.Y,
-			})
+		if n := node.Right.Glue(h); n != nil {
+			bonesGlueRight = append(bonesGlueRight, *n)
 		}
 	}
 
 	return bonesGlueLeft, bonesGlueRight
 }
 
-func oneSidedPlay(left []models.Domino, right []models.Domino) models.DominoPlayWithPass {
+func oneSidedPlay(left, right []models.DominoInTable) models.DominoPlayWithPass {
 	if len(left) > 0 {
-		return maximizedPlay(left, node.Left)
+		return maximizedPlayWithBones(left, node.Left)
 	}
 
-	return maximizedPlay(right, node.Right)
+	return maximizedPlayWithBones(right, node.Right)
 }
 
-func maximizedPlay(bones []models.Domino, edge models.DominoInTable) models.DominoPlayWithPass {
+func maximizedPlayWithBones(bones []models.DominoInTable, edge models.DominoInTable) models.DominoPlayWithPass {
 
 	maxBone := bones[0]
 
 	return playFromEdge(maxBone, edge)
 }
 
-func playFromEdge(bone models.Domino, edge models.DominoInTable) models.DominoPlayWithPass {
+func playFromEdge(bone, edge models.DominoInTable) models.DominoPlayWithPass {
 	return models.DominoPlayWithPass{
 		PlayerPosition: player,
-		Bone: &models.DominoInTable{
-			Domino: models.Domino{
-				X: bone.X,
-				Y: bone.Y,
-			},
-			Reversed: bone.Y == edge.X,
-		},
+		Bone:           &bone,
 	}
+}
+
+func getDuo() int {
+	return ((player + 1) % models.DominoPlayerLength) + 1
 }
