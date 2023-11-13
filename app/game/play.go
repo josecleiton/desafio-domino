@@ -261,7 +261,7 @@ func midgameDecision(state *models.DominoGameState) models.DominoPlayWithPass {
 		return duoPlay.DominoPlayWithPass
 	}
 
-	possiblePlays := []*playPassWithEdge{passedPlay, duoPlay, countPlay}
+	possiblePlays := []*playPassWithEdge{passedPlay, duoPlay}
 
 	for _, p := range possiblePlays {
 		if p != nil {
