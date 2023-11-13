@@ -11,17 +11,23 @@ import (
 	"github.com/josecleiton/domino/app/models"
 )
 
-type dominoStateRequest struct {
+type gameStateRequest struct {
 	Player int                `json:"jogador"`
 	Hand   []string           `json:"mao"`
 	Table  []string           `json:"mesa"`
-	Plays  []gameStateRequest `json:"jogadas"`
+	Plays  []playStateRequest `json:"jogadas"`
 }
 
-type gameStateRequest struct {
+type playStateRequest struct {
 	Player    int    `json:"jogador"`
 	Bone      string `json:"pedra"`
 	Direction string `json:"lado"`
+}
+
+type playStateResponse struct {
+	Player    int     `json:"jogador"`
+	Bone      *string `json:"pedra"`
+	Direction *string `json:"lado"`
 }
 
 func GameHandler(w http.ResponseWriter, r *http.Request) {
@@ -29,14 +35,14 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	var request dominoStateRequest
+	var request gameStateRequest
 
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&request)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
-		log.Fatalf("Error happened in JSON marshal. Err: %s", err)
+		log.Printf("Error happened in JSON marshal. Err: %s\n", err)
 
 		return
 	}
@@ -70,13 +76,13 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
-		log.Fatalf("Error happened in JSON marshal. Err: %s", err)
+		log.Printf("Error happened in JSON marshal. Err: %s\n", err)
 	}
 
 	w.Write(jsonResp)
 }
 
-func gameRequestToDomain(request *dominoStateRequest) *models.DominoGameState {
+func gameRequestToDomain(request *gameStateRequest) *models.DominoGameState {
 	hand := make([]models.Domino, 0, len(request.Hand))
 	table := make(map[int]map[int]bool, models.DominoUniqueBones)
 	plays := make([]models.DominoPlay, 0, len(request.Plays))
@@ -103,7 +109,7 @@ func gameRequestToDomain(request *dominoStateRequest) *models.DominoGameState {
 			PlayerPosition: play.Player,
 			Bone: models.DominoInTable{
 				Domino:   models.DominoFromString(play.Bone),
-				Reversed: strings.HasPrefix(strings.ToLower(play.Direction), "r"),
+				Reversed: strings.HasPrefix(strings.ToLower(play.Direction), "d"),
 			},
 		})
 	}
@@ -116,24 +122,21 @@ func gameRequestToDomain(request *dominoStateRequest) *models.DominoGameState {
 	}
 }
 
-func dominoPlayToResponse(dominoPlay models.DominoPlayWithPass) *gameStateRequest {
-	direction := "esquerda"
-
+func dominoPlayToResponse(dominoPlay models.DominoPlayWithPass) *playStateResponse {
 	if dominoPlay.Pass() {
-		return &gameStateRequest{
-			Player:    dominoPlay.PlayerPosition,
-			Bone:      "",
-			Direction: direction,
-		}
+		return &playStateResponse{Player: dominoPlay.PlayerPosition}
 	}
+
+	direction := "esquerda"
 
 	if dominoPlay.Bone.Reversed {
 		direction = "direita"
 	}
 
-	return &gameStateRequest{
+	bone := dominoPlay.Bone.Domino.String()
+	return &playStateResponse{
 		Player:    dominoPlay.PlayerPosition,
-		Bone:      dominoPlay.Bone.String(),
-		Direction: direction,
+		Bone:      &bone,
+		Direction: &direction,
 	}
 }
