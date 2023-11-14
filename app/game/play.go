@@ -59,16 +59,45 @@ func Play(state *models.DominoGameState) *models.DominoPlayWithPass {
 }
 
 func intermediateStates(state *models.DominoGameState) {
-	var lastState *models.DominoGameState
-	if len(states) > 1 {
-		lastState = &states[len(states)-2]
+	if len(states) == 1 {
+		return
 	}
 
 	currentPlay := state.Plays[len(state.Plays)-1]
 
-	// TODO: better this to check not only the lastOne
-	if lastState == nil || lastState.Plays[len(lastState.Plays)-1] != currentPlay {
-		return
+	for i := 0; i < len(states); i++ {
+		j := i + 1
+		st, nd := &states[i], &states[j]
+
+		if nd == nil && len(states) > 2 {
+			nd = st
+			st = &states[i-1]
+		}
+
+		if nd == nil ||
+			st == nil || len(st.Plays) == 0 ||
+			st.PlayerPosition == player || nd.PlayerPosition == player {
+			continue
+		}
+
+		lastStPlay, lastNdPlay := st.Plays[len(st.Plays)-1], nd.Plays[len(nd.Plays)-1]
+
+		if lastStPlay == lastNdPlay {
+			continue
+		}
+
+		currentPlayerIdx := lastStPlay.PlayerPosition - 1
+		playerIdx := player - 1
+		for i := currentPlayerIdx - 1; i != playerIdx; i = (i + 1) % currentPlayerIdx {
+			playerPassed := i + 1
+
+			for _, bone := range st.Edges.Bones() {
+				unavailableBones[playerPassed][bone.X] = true
+				unavailableBones[playerPassed][bone.Y] = true
+			}
+		}
+
+		i++
 	}
 
 	currentPlayerIdx := currentPlay.PlayerPosition - 1
@@ -81,6 +110,8 @@ func intermediateStates(state *models.DominoGameState) {
 			unavailableBones[playerPassed][bone.Y] = true
 		}
 	}
+
+	states = states[len(states)-1:]
 }
 
 func initialize(state *models.DominoGameState) {
