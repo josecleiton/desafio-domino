@@ -6,20 +6,28 @@ import (
 	"sync"
 
 	"github.com/josecleiton/domino/app/models"
+	"github.com/josecleiton/domino/app/utils"
 )
 
 var hand []models.Domino
 var plays []models.DominoPlayWithPass
-var states []models.DominoGameState
+var states *utils.LinkedList[models.DominoGameState]
 var player int
 var unavailableBones models.Table
 
 var unavailableBonesMutex sync.Mutex
 var intermediateStateWg sync.WaitGroup
 
+func init() {
+	states = utils.NewLinkedList[models.DominoGameState]()
+}
+
 func Play(state *models.DominoGameState) *models.DominoPlayWithPass {
-	states = append(states, *state)
-	states = states[len(states)-models.DominoMaxPlayer:]
+	states.Push(state)
+	forLimit := states.Len() - models.DominoMaxPlayer
+	for i := 0; i >= 0 && i < forLimit; i++ {
+		states.PopFront()
+	}
 
 	hand = append(hand, state.Hand...)
 	sort.Slice(hand, func(i, j int) bool {
@@ -59,65 +67,45 @@ func Play(state *models.DominoGameState) *models.DominoPlayWithPass {
 }
 
 func intermediateStates(state *models.DominoGameState) {
-	if len(states) == 1 {
+	if states.Len() == 1 {
 		return
 	}
 
-	currentPlay := state.Plays[len(state.Plays)-1]
+	current := states.HeadSafe()
+	for i := 0; i < states.Len(); i++ {
+		st, nd := current.Data, current.Next.Data
 
-	for i := 0; i < len(states); i++ {
-		j := i + 1
-		st, nd := &states[i], &states[j]
-
-		if nd == nil && len(states) > 2 {
-			nd = st
-			st = &states[i-1]
-		}
-
-		if nd == nil ||
-			st == nil || len(st.Plays) == 0 ||
-			st.PlayerPosition == player || nd.PlayerPosition == player {
+		if len(st.Plays) == 0 {
 			continue
 		}
 
 		lastStPlay, lastNdPlay := st.Plays[len(st.Plays)-1], nd.Plays[len(nd.Plays)-1]
-
 		if lastStPlay == lastNdPlay {
 			continue
 		}
 
 		currentPlayerIdx := lastStPlay.PlayerPosition - 1
-		playerIdx := player - 1
-		for i := currentPlayerIdx - 1; i != playerIdx; i = (i + 1) % currentPlayerIdx {
+
+		for i := (currentPlayerIdx + 1) % models.DominoMaxPlayer; i != currentPlayerIdx; i = (i + 1) % models.DominoMaxPlayer {
 			playerPassed := i + 1
 
 			for _, bone := range st.Edges.Bones() {
-				unavailableBones[playerPassed][bone.X] = true
 				unavailableBones[playerPassed][bone.Y] = true
 			}
 		}
 
-		i++
+		current = current.Next
 	}
 
-	currentPlayerIdx := currentPlay.PlayerPosition - 1
-	playerIdx := player - 1
-	for i := currentPlayerIdx - 1; i != playerIdx; i = (i + 1) % currentPlayerIdx {
-		playerPassed := i + 1
-
-		for _, bone := range state.Edges.Bones() {
-			unavailableBones[playerPassed][bone.X] = true
-			unavailableBones[playerPassed][bone.Y] = true
-		}
+	for states.Len() > 1 {
+		states.PopFront()
 	}
-
-	states = states[len(states)-1:]
 }
 
 func initialize(state *models.DominoGameState) {
 	player = state.PlayerPosition
 	clear(plays)
-	clear(states)
+	states.Clear()
 }
 
 func initialPlay(state *models.DominoGameState) models.DominoPlayWithPass {
