@@ -1,10 +1,7 @@
 package game
 
 import (
-	"crypto/rand"
 	"log"
-	"math/big"
-	mrand "math/rand"
 	"sort"
 	"sync"
 
@@ -18,25 +15,34 @@ var player int
 var unavailableBones models.Table
 
 var unavailableBonesMutex sync.Mutex
+var intermediateStateWg sync.WaitGroup
 
 func Play(state *models.DominoGameState) *models.DominoPlayWithPass {
 	states = append(states, *state)
+	states = states[len(states)-2:]
+
 	hand = append(hand, state.Hand...)
 	sort.Slice(hand, func(i, j int) bool {
 		return hand[i].Sum() >= hand[j].Sum()
 	})
 
 	if len(state.Plays) > 0 {
-		plays = make([]models.DominoPlayWithPass, 0, len(state.Plays))
+		intermediateStateWg.Add(1)
+		go func() {
+			defer intermediateStateWg.Done()
+			intermediateStates(state)
+		}()
 
-		for _, edge := range state.Plays {
-			edgePlays := edge.Slice()
-			for _, play := range edgePlays {
-				plays = append(plays, models.DominoPlayWithPass{
-					PlayerPosition: player,
-					Bone:           &play.Bone,
-				})
+		plays = make([]models.DominoPlayWithPass, 0, len(state.Edges))
+
+		for _, play := range state.Plays {
+			if play.PlayerPosition != player {
+				continue
 			}
+			plays = append(plays, models.DominoPlayWithPass{
+				PlayerPosition: player,
+				Bone:           &play.Bone,
+			})
 
 		}
 
@@ -52,6 +58,12 @@ func Play(state *models.DominoGameState) *models.DominoPlayWithPass {
 	return &plays[len(plays)-1]
 }
 
+func intermediateStates(state *models.DominoGameState) {
+	// TODO: implement
+	//  based on past game state store the unavailable bones
+	panic("unimplemented")
+}
+
 func initialize(state *models.DominoGameState) {
 	player = state.PlayerPosition
 	clear(plays)
@@ -61,15 +73,10 @@ func initialize(state *models.DominoGameState) {
 func initialPlay(state *models.DominoGameState) models.DominoPlayWithPass {
 	initialize(state)
 
-	edge := models.LeftEdge
-	if cryptoRandSecure(10000)&1 == 1 {
-		edge = models.RightEdge
-	}
-
 	return models.DominoPlayWithPass{
 		PlayerPosition: state.PlayerPosition,
 		Bone: &models.DominoInTable{
-			Edge: edge,
+			Edge: models.LeftEdge,
 			Domino: models.Domino{
 				X: hand[0].X,
 				Y: hand[0].Y,
@@ -78,27 +85,18 @@ func initialPlay(state *models.DominoGameState) models.DominoPlayWithPass {
 	}
 }
 
-func cryptoRandSecure(max int64) int64 {
-	nBig, err := rand.Int(rand.Reader, big.NewInt(max))
-	if err != nil {
-		log.Printf("Less secure random. Cause :%s\n", err)
-		return mrand.Int63()
-	}
-	return nBig.Int64()
-}
-
 func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 	left, right := handCanPlayThisTurn(state)
 	leftLen, rightLen := len(left), len(right)
 
 	// pass
 	if leftLen == 0 && rightLen == 0 {
-		if v, ok := state.Plays[models.LeftEdge]; ok && v != nil {
-			unavailableBones[player][v.Tail().Data.Bone.Side()] = true
+		if ep, ok := state.Edges[models.LeftEdge]; ok && ep != nil {
+			unavailableBones[player][ep.Bone.Y] = true
 		}
 
-		if v, ok := state.Plays[models.RightEdge]; ok && v != nil {
-			unavailableBones[player][v.Tail().Data.Bone.Side()] = true
+		if ep, ok := state.Edges[models.RightEdge]; ok && ep != nil {
+			unavailableBones[player][ep.Bone.Y] = true
 		}
 
 		return models.DominoPlayWithPass{PlayerPosition: player}
@@ -116,6 +114,8 @@ func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 
 	go func() {
 		defer wg.Done()
+
+		intermediateStateWg.Wait()
 
 		filteredLeft, filteredRight := duoCanPlayWithBoneGlue(left, right)
 		cantPlayLeft, cantPlayRight := len(filteredLeft) == 0, len(filteredRight) == 0
@@ -158,6 +158,8 @@ func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 		leftCount, rightCount := append([]models.DominoInTable{}, left...),
 			append([]models.DominoInTable{}, right...)
 
+		intermediateStateWg.Wait()
+
 		sortByPassed(leftCount)
 		sortByPassed(rightCount)
 
@@ -190,8 +192,8 @@ func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 	go func() {
 		defer wg.Done()
 
-		if v, ok := state.Plays[models.LeftEdge]; ok && v != nil {
-			leftBonesInGame := countBones(v.Tail().Data.Bone, state)
+		if ep, ok := state.Edges[models.LeftEdge]; ok && ep != nil {
+			leftBonesInGame := countBones(state, ep.Bone)
 			if len(left) == 1 && leftBonesInGame == models.DominoUniqueBones-1 {
 				play := playFromDominoInTable(right[0])
 				countPlay = &play
@@ -199,8 +201,8 @@ func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 			}
 		}
 
-		if v, ok := state.Plays[models.RightEdge]; ok && v != nil {
-			rightBonesInGame := countBones(v.Tail().Data.Bone, state)
+		if ep, ok := state.Edges[models.RightEdge]; ok && ep != nil {
+			rightBonesInGame := countBones(state, ep.Bone)
 			if len(right) == 1 && rightBonesInGame == models.DominoUniqueBones-1 {
 				play := playFromDominoInTable(left[0])
 				countPlay = &play
@@ -293,8 +295,8 @@ func duoCanPlayEdges(state *models.DominoGameState) (bool, bool) {
 
 func duoCanPlayEdge(state *models.DominoGameState, edge models.Edge) bool {
 	duo := getDuo()
-	if v, ok := state.Plays[edge]; ok && v != nil {
-		if v, ok := unavailableBones[duo][v.Tail().Data.Bone.Side()]; ok && v {
+	if ep, ok := state.Edges[edge]; ok && ep != nil {
+		if v, ok := unavailableBones[duo][ep.Bone.Y]; ok && v {
 			return false
 		}
 	}
@@ -311,15 +313,19 @@ func duoCanPlayWithBoneGlue(left, right []models.DominoInTable) ([]models.Domino
 	unavailableBonesMutex.Lock()
 	defer unavailableBonesMutex.Unlock()
 	for _, bone := range left {
-		if v, ok := unavailableBones[duo][bone.Side()]; !(ok && v) {
-			duoLeft = append(duoLeft, bone)
+		if v, ok := unavailableBones[duo][bone.Y]; ok && v {
+			continue
 		}
+
+		duoLeft = append(duoLeft, bone)
 	}
 
 	for _, bone := range right {
-		if v, ok := unavailableBones[duo][bone.Side()]; !(ok && v) {
-			duoRight = append(duoRight, bone)
+		if v, ok := unavailableBones[duo][bone.Y]; ok && v {
+			continue
 		}
+
+		duoRight = append(duoRight, bone)
 	}
 
 	return duoLeft, duoRight
@@ -329,9 +335,9 @@ func handCanPlayThisTurn(state *models.DominoGameState) ([]models.DominoInTable,
 	bonesGlueLeft := make([]models.DominoInTable, 0, len(hand))
 	bonesGlueRight := make([]models.DominoInTable, 0, len(hand))
 
-	for _, h := range hand {
-		if v, ok := state.Plays[models.LeftEdge]; ok && v != nil {
-			if bone := h.Glue(v.Tail().Data.Bone.Domino); bone != nil {
+	for _, bh := range hand {
+		if ep, ok := state.Edges[models.LeftEdge]; ok && ep != nil {
+			if bone := bh.Glue(ep.Bone.Domino); bone != nil {
 				bonesGlueLeft = append(bonesGlueLeft, models.DominoInTable{
 					Domino: *bone,
 					Edge:   models.LeftEdge,
@@ -339,8 +345,8 @@ func handCanPlayThisTurn(state *models.DominoGameState) ([]models.DominoInTable,
 			}
 		}
 
-		if v, ok := state.Plays[models.RightEdge]; ok && v != nil {
-			if bone := h.Glue(v.Tail().Data.Bone.Domino); bone != nil {
+		if ep, ok := state.Edges[models.RightEdge]; ok && ep != nil {
+			if bone := bh.Glue(ep.Bone.Domino); bone != nil {
 				bonesGlueRight = append(bonesGlueRight, models.DominoInTable{
 					Domino: *bone,
 					Edge:   models.RightEdge,
@@ -378,8 +384,8 @@ func getDuo() int {
 	return ((player + 1) % models.DominoMaxPlayer) + 1
 }
 
-func countBones(bone models.DominoInTable, state *models.DominoGameState) int {
-	if v, ok := state.Table[bone.Side()]; ok {
+func countBones(state *models.DominoGameState, bone models.DominoInTable) int {
+	if v, ok := state.Table[bone.Y]; ok {
 		return len(v)
 	}
 

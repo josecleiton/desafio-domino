@@ -59,7 +59,3 @@ func DominoFromString(s string) (*Domino, error) {
 		Y: y,
 	}, nil
 }
-
-func (t DominoInTable) Side() int {
-	return t.Y
-}

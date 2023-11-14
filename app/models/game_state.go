@@ -1,7 +1,5 @@
 package models
 
-import "github.com/josecleiton/domino/app/utils"
-
 const DominoMaxPlayer = 4
 const DominoMinPlayer = 1
 
@@ -22,7 +20,7 @@ type DominoPlayWithPass struct {
 	Bone           *DominoInTable
 }
 
-type Plays map[Edge]*utils.LinkedList[DominoPlay]
+type Edges map[Edge]*DominoPlay
 type TableBone map[int]bool
 type Table map[int]TableBone
 
@@ -30,7 +28,8 @@ type DominoGameState struct {
 	PlayerPosition int
 	Hand           []Domino
 	Table          Table
-	Plays          Plays
+	Edges          Edges
+	Plays          []DominoPlay
 }
 
 func (play DominoPlayWithPass) Pass() bool {

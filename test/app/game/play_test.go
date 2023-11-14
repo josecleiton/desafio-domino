@@ -5,7 +5,6 @@ import (
 
 	"github.com/josecleiton/domino/app/game"
 	"github.com/josecleiton/domino/app/models"
-	"github.com/josecleiton/domino/app/utils"
 )
 
 func firstPlay() models.DominoGameState {
@@ -21,7 +20,8 @@ func firstPlay() models.DominoGameState {
 			{X: 1, Y: 3},
 		},
 		Table: models.Table{},
-		Plays: models.Plays{},
+		Plays: []models.DominoPlay{},
+		Edges: models.Edges{},
 	}
 }
 
@@ -54,49 +54,48 @@ func TestPlayGlue(t *testing.T) {
 	gameStateSt := firstPlay()
 	play := game.Play(&gameStateSt)
 
-	leftEdge, rightEdge :=
-		utils.LinkedList[models.DominoPlay]{},
-		utils.LinkedList[models.DominoPlay]{}
-
-	leftEdge.Push(&models.DominoPlay{
-		PlayerPosition: play.PlayerPosition + 1,
-		Bone: models.DominoInTable{
-			Edge: models.LeftEdge,
-			Domino: models.Domino{
-				X: 5,
-				Y: 4,
+	plays := []models.DominoPlay{
+		{
+			PlayerPosition: play.PlayerPosition,
+			Bone: models.DominoInTable{
+				Edge:   play.Bone.Edge,
+				Domino: play.Bone.Domino,
 			},
 		},
-	})
-	rightEdge.Push(&models.DominoPlay{
-		PlayerPosition: play.PlayerPosition + 2,
-		Bone: models.DominoInTable{
-			Edge: models.RightEdge,
-			Domino: models.Domino{
-				X: 5,
-				Y: 3,
+		{
+			PlayerPosition: play.PlayerPosition + 1,
+			Bone: models.DominoInTable{
+				Edge: models.LeftEdge,
+				Domino: models.Domino{
+					X: 5,
+					Y: 4,
+				},
 			},
 		},
-	})
-	plays := models.Plays{
-		models.LeftEdge:  &leftEdge,
-		models.RightEdge: &rightEdge,
+		{
+			PlayerPosition: play.PlayerPosition + 2,
+			Bone: models.DominoInTable{
+				Edge: models.RightEdge,
+				Domino: models.Domino{
+					X: 5,
+					Y: 3,
+				},
+			},
+		},
 	}
 
 	table := make(models.Table, len(plays))
-	for _, v := range plays {
-		head := v.Head()
-		for current := &head; current != nil; current = current.Next {
-			bone := current.Data.Bone
-			for _, boneSide := range []int{bone.X, bone.Y} {
-				if _, ok := table[boneSide]; !ok {
-					table[boneSide] = make(models.TableBone, len(plays))
-				}
-			}
-
-			table[bone.X][bone.Y] = true
-			table[bone.Y][bone.X] = true
+	for _, play := range plays {
+		if _, ok := table[play.Bone.X]; !ok {
+			table[play.Bone.X] = make(models.TableBone, len(plays))
 		}
+
+		if _, ok := table[play.Bone.Y]; !ok {
+			table[play.Bone.Y] = make(models.TableBone, len(plays))
+		}
+
+		table[play.Bone.X][play.Bone.Y] = true
+		table[play.Bone.Y][play.Bone.X] = true
 	}
 
 	newHand := make([]models.Domino, 0, len(gameStateSt.Hand)-1)
@@ -106,11 +105,17 @@ func TestPlayGlue(t *testing.T) {
 		}
 	}
 
+	edges := models.Edges{
+		models.LeftEdge:  &plays[1],
+		models.RightEdge: &plays[2],
+	}
+
 	gameStateNd := models.DominoGameState{
 		PlayerPosition: play.PlayerPosition,
-		Plays:          plays,
+		Edges:          edges,
 		Hand:           newHand,
 		Table:          table,
+		Plays:          plays,
 	}
 
 	play = game.Play(&gameStateNd)

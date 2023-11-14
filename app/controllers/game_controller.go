@@ -8,7 +8,6 @@ import (
 
 	"github.com/josecleiton/domino/app/game"
 	"github.com/josecleiton/domino/app/models"
-	"github.com/josecleiton/domino/app/utils"
 )
 
 type gameStateRequest struct {
@@ -79,7 +78,8 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 
 	play := game.Play(domino)
 
-	resp := dominoPlayToResponse(*play)
+	resp := dominoPlayToResponse(domino, *play)
+
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -103,11 +103,8 @@ func gameRequestToDomain(request *gameStateRequest) (*models.DominoGameState, er
 	hand := make([]models.Domino, 0, len(request.Hand))
 	table := make(models.Table, models.DominoUniqueBones)
 	possibleEdges := []models.Edge{models.LeftEdge, models.RightEdge}
-	plays := make(models.Plays, len(possibleEdges))
-	for _, edge := range possibleEdges {
-		list := utils.LinkedList[models.DominoPlay]{}
-		plays[edge] = &list
-	}
+	edges := make(models.Edges, len(possibleEdges))
+	plays := make([]models.DominoPlay, len(request.Plays))
 
 	for _, bone := range request.Hand {
 		domino, err := models.DominoFromString(bone)
@@ -118,8 +115,8 @@ func gameRequestToDomain(request *gameStateRequest) (*models.DominoGameState, er
 		hand = append(hand, *domino)
 	}
 
-	for _, bone := range request.Table {
-		domino, err := models.DominoFromString(bone)
+	for i, play := range request.Plays {
+		domino, err := models.DominoFromString(play.Bone)
 		if err != nil {
 			return nil, err
 		}
@@ -133,71 +130,63 @@ func gameRequestToDomain(request *gameStateRequest) (*models.DominoGameState, er
 
 		table[domino.X][domino.Y] = true
 		table[domino.Y][domino.X] = true
-	}
-
-	for i, play := range request.Plays {
-		domino, err := models.DominoFromString(play.Bone)
-		if err != nil {
-			return nil, err
-		}
-
-		if i == 0 {
-			plays[models.LeftEdge].Push(&models.DominoPlay{
-				PlayerPosition: play.Player,
-				Bone: models.DominoInTable{
-					Domino: *domino,
-					Edge:   models.LeftEdge,
-				},
-			})
-
-			plays[models.RightEdge].Push(&models.DominoPlay{
-				PlayerPosition: play.Player,
-				Bone: models.DominoInTable{
-					Domino: *domino,
-					Edge:   models.RightEdge,
-				},
-			})
-
-			continue
-		}
 
 		edge := models.LeftEdge
-		if *play.Direction == Right {
+		if play.Direction != nil && *play.Direction == Right {
 			edge = models.RightEdge
 		}
 
-		plays[edge].Push(&models.DominoPlay{
+		plays = append(plays, models.DominoPlay{
 			PlayerPosition: play.Player,
 			Bone: models.DominoInTable{
 				Domino: *domino,
 				Edge:   edge,
 			},
 		})
+
+		if i == 0 && len(request.Plays) == 0 {
+			leftEdge := plays[len(plays)-1]
+			rightEdge := leftEdge
+			leftEdge.Bone.Edge = models.LeftEdge
+
+			edges[models.LeftEdge] = &leftEdge
+			edges[models.RightEdge] = &rightEdge
+
+			continue
+		}
+
+		edgePlay := plays[len(plays)-1]
+		edgePlay.Bone.Edge = edge
+		edges[edge] = &edgePlay
 	}
 
 	return &models.DominoGameState{
 		PlayerPosition: request.Player,
 		Hand:           hand,
 		Table:          table,
+		Edges:          edges,
 		Plays:          plays,
 	}, nil
 }
 
-func dominoPlayToResponse(dominoPlay models.DominoPlayWithPass) *playStateResponse {
+func dominoPlayToResponse(state *models.DominoGameState, dominoPlay models.DominoPlayWithPass) *playStateResponse {
 	if dominoPlay.Pass() {
 		return &playStateResponse{Player: dominoPlay.PlayerPosition}
 	}
 
-	direction := Left
+	direction := new(externalDirection)
 
-	if dominoPlay.Bone.Edge == models.RightEdge {
-		direction = Right
+	*direction = Left
+	if len(state.Table) == 0 {
+		direction = nil
+	} else if dominoPlay.Bone.Edge == models.RightEdge {
+		*direction = Right
 	}
 
 	bone := dominoPlay.Bone.Domino.String()
 	return &playStateResponse{
 		Player:    dominoPlay.PlayerPosition,
 		Bone:      &bone,
-		Direction: &direction,
+		Direction: direction,
 	}
 }
