@@ -35,3 +35,12 @@ type DominoGameState struct {
 func (play DominoPlayWithPass) Pass() bool {
 	return play.Bone == nil
 }
+
+func (e Edges) Bones() []DominoInTable {
+	bones := make([]DominoInTable, 0, len(e))
+	for _, v := range e {
+		bones = append(bones, v.Bone)
+	}
+
+	return bones
+}
