@@ -30,11 +30,11 @@ func (d Domino) Reversed() Domino {
 }
 
 func (d Domino) Glue(other Domino) *Domino {
-	if other.X == d.X {
+	if other.Y == d.X {
 		return &d
 	}
 
-	if other.X == d.Y {
+	if other.Y == d.Y {
 		reversed := d.Reversed()
 		return &reversed
 	}

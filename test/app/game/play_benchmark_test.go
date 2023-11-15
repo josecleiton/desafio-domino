@@ -1,6 +1,7 @@
 package game
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/josecleiton/domino/app/game"
@@ -75,10 +76,25 @@ func BenchmarkTestPlayGlue(b *testing.B) {
 		Plays:          plays,
 	}
 
-	play = game.Play(&gameStateNd)
+	ndPlay := game.Play(&gameStateNd)
 
-	if play.Pass() {
-		b.Fatal("Pass is not allowed on glue play")
+	if ndPlay.Pass() {
+		fmt.Println("Pass is not allowed")
+		b.FailNow()
 	}
+
+	fromHand := false
+	for _, bone := range newHand {
+		if bone == ndPlay.Bone.Domino || bone.Reversed() == ndPlay.Bone.Domino {
+			fromHand = true
+		}
+	}
+
+	if !fromHand {
+		fmt.Printf("Bone %v not found in hand %v\n", ndPlay.Bone.Domino, newHand)
+		b.Fail()
+	}
+
+	fmt.Println(ndPlay)
 
 }

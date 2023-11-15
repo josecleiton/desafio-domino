@@ -1,6 +1,7 @@
 package game
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/josecleiton/domino/app/game"
@@ -11,13 +12,13 @@ func firstPlay() models.DominoGameState {
 	return models.DominoGameState{
 		PlayerPosition: 1,
 		Hand: []models.Domino{
+			{X: 0, Y: 0},
+			{X: 0, Y: 3},
+			{X: 1, Y: 2},
+			{X: 1, Y: 3},
+			{X: 1, Y: 6},
 			{X: 3, Y: 6},
 			{X: 5, Y: 5},
-			{X: 1, Y: 2},
-			{X: 0, Y: 0},
-			{X: 0, Y: 4},
-			{X: 1, Y: 6},
-			{X: 1, Y: 3},
 		},
 		Table: models.Table{},
 		Plays: []models.DominoPlay{},
@@ -105,6 +106,8 @@ func TestPlayGlue(t *testing.T) {
 		}
 	}
 
+	fmt.Println("new hand: ", newHand)
+
 	edges := models.Edges{
 		models.LeftEdge:  &plays[1],
 		models.RightEdge: &plays[2],
@@ -118,9 +121,26 @@ func TestPlayGlue(t *testing.T) {
 		Plays:          plays,
 	}
 
-	play = game.Play(&gameStateNd)
+	fmt.Println("edges:", edges)
 
-	if play.Pass() {
-		t.Fatal("Pass is not allowed on glue play")
+	ndPlay := game.Play(&gameStateNd)
+
+	if ndPlay.Pass() {
+		fmt.Println("Pass is not allowed")
+		t.FailNow()
 	}
+
+	fromHand := false
+	for _, bone := range newHand {
+		if bone == ndPlay.Bone.Domino || bone.Reversed() == ndPlay.Bone.Domino {
+			fromHand = true
+		}
+	}
+
+	if !fromHand {
+		fmt.Printf("Bone %v not found in hand %v\n", ndPlay.Bone.Domino, newHand)
+		t.Fail()
+	}
+
+	fmt.Println("newPlay:", ndPlay)
 }

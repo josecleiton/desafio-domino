@@ -28,7 +28,7 @@ func Play(state *models.DominoGameState) *models.DominoPlayWithPass {
 	for i := 0; i >= 0 && i < forLimit; i++ {
 		states.PopFront()
 	}
-
+	hand = make([]models.Domino, 0, len(state.Hand))
 	hand = append(hand, state.Hand...)
 	sort.Slice(hand, func(i, j int) bool {
 		return hand[i].Sum() >= hand[j].Sum()

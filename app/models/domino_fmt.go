@@ -17,3 +17,14 @@ func (d Domino) String() string {
 
 	return fmt.Sprintf("%c", base+offset)
 }
+
+func (e Edges) String() string {
+	result := ""
+	for k, v := range e {
+		if v != nil {
+			result += fmt.Sprintf("{%v, %v} ", k, v.Bone.Domino)
+		}
+	}
+
+	return result
+}
