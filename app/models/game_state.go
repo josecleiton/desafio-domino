@@ -1,5 +1,7 @@
 package models
 
+import "fmt"
+
 const DominoMaxPlayer = 4
 const DominoMinPlayer = 1
 
@@ -34,6 +36,10 @@ type DominoGameState struct {
 
 func (play DominoPlayWithPass) Pass() bool {
 	return play.Bone == nil
+}
+
+func (play DominoPlayWithPass) String() string {
+	return fmt.Sprintf("{Player: %d, Bone: %v}", play.PlayerPosition, play.Bone)
 }
 
 func (e Edges) Bones() []DominoInTable {

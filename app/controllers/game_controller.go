@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/josecleiton/domino/app/game"
 	"github.com/josecleiton/domino/app/models"
@@ -32,8 +33,8 @@ type playStateRequest struct {
 
 type playStateResponse struct {
 	Player    int                `json:"jogador"`
-	Bone      *string            `json:"pedra"`
-	Direction *externalDirection `json:"lado"`
+	Bone      *string            `json:"pedra,omitempty"`
+	Direction *externalDirection `json:"lado,omitempty"`
 }
 
 func GameHandler(w http.ResponseWriter, r *http.Request) {
@@ -76,6 +77,27 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		table := make([]models.Domino, 0, len(domino.Table))
+		for _, v := range request.Table {
+			domino, err := models.DominoFromString(v)
+			if err != nil {
+				log.Printf("Error happened in decode. Err: %s\n", err)
+				return
+			}
+
+			table = append(table, *domino)
+
+		}
+
+		log.Printf("[REQ] {PlaysCount: %d, Table: %v}\n", len(domino.Plays), table)
+	}()
+
 	play := game.Play(domino)
 
 	resp := dominoPlayToResponse(domino, *play)
@@ -88,6 +110,9 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write(jsonResp)
+
+	wg.Wait()
+	log.Printf("[RES] %v\n", play)
 }
 
 func gameRequestToDomain(request *gameStateRequest) (*models.DominoGameState, error) {
@@ -183,7 +208,8 @@ func dominoPlayToResponse(state *models.DominoGameState, dominoPlay models.Domin
 		*direction = Right
 	}
 
-	bone := dominoPlay.Bone.Domino.String()
+	domino := dominoPlay.Bone.Domino
+	bone := fmt.Sprintf("%d-%d", domino.X, domino.Y)
 	return &playStateResponse{
 		Player:    dominoPlay.PlayerPosition,
 		Bone:      &bone,

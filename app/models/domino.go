@@ -17,12 +17,12 @@ type DominoInTable struct {
 	Domino
 }
 
-func (d Domino) String() string {
-	return fmt.Sprintf("%d-%d", d.Y, d.X)
-}
-
 func (d Domino) Sum() int {
 	return d.X + d.Y
+}
+
+func (d Domino) IsDouble() bool {
+	return d.X == d.Y
 }
 
 func (d Domino) Reversed() Domino {
