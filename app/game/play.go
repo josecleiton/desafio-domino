@@ -375,7 +375,7 @@ func handCanPlayThisTurn(state *models.DominoGameState) ([]models.DominoInTable,
 
 	for _, bh := range hand {
 		if ep, ok := state.Edges[models.LeftEdge]; ok && ep != nil {
-			if bone := bh.Glue(ep.Bone.Domino); bone != nil {
+			if bone := ep.Bone.Glue(bh); bone != nil {
 				bonesGlueLeft = append(bonesGlueLeft, models.DominoInTable{
 					Domino: *bone,
 					Edge:   models.LeftEdge,
@@ -384,7 +384,7 @@ func handCanPlayThisTurn(state *models.DominoGameState) ([]models.DominoInTable,
 		}
 
 		if ep, ok := state.Edges[models.RightEdge]; ok && ep != nil {
-			if bone := bh.Glue(ep.Bone.Domino); bone != nil {
+			if bone := ep.Bone.Glue(bh); bone != nil {
 				bonesGlueRight = append(bonesGlueRight, models.DominoInTable{
 					Domino: *bone,
 					Edge:   models.RightEdge,

@@ -29,19 +29,6 @@ func (d Domino) Reversed() Domino {
 	return Domino{X: d.Y, Y: d.X}
 }
 
-func (d Domino) Glue(other Domino) *Domino {
-	if other.Y == d.X {
-		return &d
-	}
-
-	if other.Y == d.Y {
-		reversed := d.Reversed()
-		return &reversed
-	}
-
-	return nil
-}
-
 func DominoFromString(s string) (*Domino, error) {
 	var x, y int
 

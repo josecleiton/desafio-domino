@@ -51,3 +51,20 @@ func (e Edges) Bones() []DominoInTable {
 
 	return bones
 }
+func (d DominoInTable) Glue(other Domino) *Domino {
+	side := d.X
+	if d.Edge == RightEdge {
+		side = d.Y
+	}
+
+	if side == other.X {
+		return &other
+	}
+
+	if side == other.Y {
+		reversed := other.Reversed()
+		return &reversed
+	}
+
+	return nil
+}
