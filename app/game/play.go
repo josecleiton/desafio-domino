@@ -13,7 +13,7 @@ var hand []models.Domino
 var plays []models.DominoPlayWithPass
 var states *utils.LinkedList[models.DominoGameState]
 var player int
-var unavailableBones models.Table
+var unavailableBones models.TableMap
 
 var unavailableBonesMutex sync.Mutex
 var intermediateStateWg sync.WaitGroup
@@ -22,7 +22,7 @@ func init() {
 	states = utils.NewLinkedList[models.DominoGameState]()
 }
 
-func Play(state *models.DominoGameState) *models.DominoPlayWithPass {
+func Play(state *models.DominoGameState) models.DominoPlayWithPass {
 	states.Push(state)
 	forLimit := states.Len() - models.DominoMaxPlayer
 	for i := 0; i >= 0 && i < forLimit; i++ {
@@ -63,7 +63,7 @@ func Play(state *models.DominoGameState) *models.DominoPlayWithPass {
 		plays = append(plays, initialPlay(state))
 	}
 
-	return &plays[len(plays)-1]
+	return plays[len(plays)-1]
 }
 
 func intermediateStates(state *models.DominoGameState) {
@@ -423,7 +423,7 @@ func getDuo() int {
 }
 
 func countBones(state *models.DominoGameState, bone models.DominoInTable) int {
-	if v, ok := state.Table[bone.Y]; ok {
+	if v, ok := state.TableMap[bone.Y]; ok {
 		return len(v)
 	}
 

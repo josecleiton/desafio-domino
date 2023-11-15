@@ -82,25 +82,16 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-
-		table := make([]models.Domino, 0, len(domino.Table))
-		for _, v := range request.Table {
-			domino, err := models.DominoFromString(v)
-			if err != nil {
-				log.Printf("Error happened in decode. Err: %s\n", err)
-				return
-			}
-
-			table = append(table, *domino)
-
-		}
-
-		log.Printf("[REQ] {PlaysCount: %d, Table: %v}\n", len(domino.Plays), table)
+		log.Printf(
+			"[REQ] {PlaysCount: %d, Table: %v}\n",
+			len(domino.Plays),
+			domino.Table,
+		)
 	}()
 
 	play := game.Play(domino)
 
-	resp := dominoPlayToResponse(domino, *play)
+	resp := dominoPlayToResponse(domino, play)
 
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
@@ -126,7 +117,8 @@ func gameRequestToDomain(request *gameStateRequest) (*models.DominoGameState, er
 	}
 
 	hand := make([]models.Domino, 0, len(request.Hand))
-	table := make(models.Table, models.DominoUniqueBones)
+	tableMap := make(models.TableMap, models.DominoUniqueBones)
+	table := make([]models.Domino, 0, len(request.Table))
 	possibleEdges := []models.Edge{models.LeftEdge, models.RightEdge}
 	edges := make(models.Edges, len(possibleEdges))
 	plays := make([]models.DominoPlay, len(request.Plays))
@@ -146,15 +138,15 @@ func gameRequestToDomain(request *gameStateRequest) (*models.DominoGameState, er
 			return nil, err
 		}
 
-		if _, ok := table[domino.X]; !ok {
-			table[domino.X] = make(models.TableBone, models.DominoUniqueBones)
+		if _, ok := tableMap[domino.X]; !ok {
+			tableMap[domino.X] = make(models.TableBone, models.DominoUniqueBones)
 		}
-		if _, ok := table[domino.Y]; !ok {
-			table[domino.Y] = make(models.TableBone, models.DominoUniqueBones)
+		if _, ok := tableMap[domino.Y]; !ok {
+			tableMap[domino.Y] = make(models.TableBone, models.DominoUniqueBones)
 		}
 
-		table[domino.X][domino.Y] = true
-		table[domino.Y][domino.X] = true
+		tableMap[domino.X][domino.Y] = true
+		tableMap[domino.Y][domino.X] = true
 
 		edge := models.LeftEdge
 		if play.Direction != nil && *play.Direction == Right {
@@ -169,6 +161,15 @@ func gameRequestToDomain(request *gameStateRequest) (*models.DominoGameState, er
 			},
 		})
 
+	}
+
+	for _, v := range request.Table {
+		domino, err := models.DominoFromString(v)
+		if err != nil {
+			return nil, err
+		}
+
+		table = append(table, *domino)
 	}
 
 	playsRequestLen := len(request.Plays)
@@ -187,6 +188,7 @@ func gameRequestToDomain(request *gameStateRequest) (*models.DominoGameState, er
 	return &models.DominoGameState{
 		PlayerPosition: request.Player,
 		Hand:           hand,
+		TableMap:       tableMap,
 		Table:          table,
 		Edges:          edges,
 		Plays:          plays,
@@ -201,7 +203,7 @@ func dominoPlayToResponse(state *models.DominoGameState, dominoPlay models.Domin
 	direction := new(externalDirection)
 	*direction = Left
 
-	if len(state.Table) == 0 {
+	if len(state.TableMap) == 0 {
 		direction = nil
 	} else if dominoPlay.Bone.Edge == models.RightEdge {
 		*direction = Right

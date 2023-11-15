@@ -42,7 +42,7 @@ func BenchmarkTestPlayGlue(b *testing.B) {
 		},
 	}
 
-	table := make(models.Table, len(plays))
+	table := make(models.TableMap, len(plays))
 	for _, play := range plays {
 		if _, ok := table[play.Bone.X]; !ok {
 			table[play.Bone.X] = make(models.TableBone, len(plays))
@@ -72,7 +72,7 @@ func BenchmarkTestPlayGlue(b *testing.B) {
 		PlayerPosition: play.PlayerPosition,
 		Edges:          edges,
 		Hand:           newHand,
-		Table:          table,
+		TableMap:       table,
 		Plays:          plays,
 	}
 

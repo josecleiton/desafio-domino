@@ -24,12 +24,13 @@ type DominoPlayWithPass struct {
 
 type Edges map[Edge]*DominoPlay
 type TableBone map[int]bool
-type Table map[int]TableBone
+type TableMap map[int]TableBone
 
 type DominoGameState struct {
 	PlayerPosition int
 	Hand           []Domino
-	Table          Table
+	Table          []Domino
+	TableMap       TableMap
 	Edges          Edges
 	Plays          []DominoPlay
 }
