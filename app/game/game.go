@@ -186,9 +186,9 @@ func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 		allPlays = append(allPlays, state.Plays...)
 
 		defer generateTree(state, guessTreeGenerate{
-			Table: state.Table,
-			Hand:  hand,
-			Plays: allPlays,
+			Player: player,
+			Hand:   hand,
+			Plays:  allPlays,
 		})
 
 		return models.DominoPlayWithPass{PlayerPosition: player}

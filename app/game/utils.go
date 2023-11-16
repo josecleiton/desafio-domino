@@ -29,6 +29,16 @@ func dominoInTableFromEdge(state *models.DominoGameState, edge models.Edge) mode
 	}
 }
 
+func dominoInTableFromDomino(domino models.Domino, edge models.Edge) models.DominoInTable {
+	return models.DominoInTable{
+		Edge: edge,
+		Domino: models.Domino{
+			X: domino.X,
+			Y: domino.Y,
+		},
+	}
+}
+
 func sortByPassed(bones []models.DominoInTable) {
 	unavailableBonesMutex.Lock()
 	defer unavailableBonesMutex.Unlock()
