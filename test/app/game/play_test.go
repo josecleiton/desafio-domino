@@ -86,8 +86,8 @@ func secondPlay(stGameState *models.DominoGameState, stPlay *models.DominoPlayWi
 	}
 
 	edges := models.Edges{
-		models.LeftEdge:  &plays[1],
-		models.RightEdge: &plays[2],
+		models.LeftEdge:  &plays[1].Bone.Domino,
+		models.RightEdge: &plays[2].Bone.Domino,
 	}
 
 	return models.DominoGameState{
@@ -154,23 +154,261 @@ func TestPlayGlue(t *testing.T) {
 	fmt.Println("newPlay:", ndPlay)
 }
 
-func TestCountPlay(t *testing.T) {
-	plays := make([]models.DominoPlayWithPass, 0, models.DominoHandLength)
-	gameStates := make([]models.DominoGameState, 0, models.DominoHandLength)
+func TestPassedPlay(t *testing.T) {
+	tableSt := []models.Domino{
+		{X: 0, Y: 2},
+		{X: 2, Y: 5},
+		{X: 5, Y: 5},
+		{X: 5, Y: 6},
+		{X: 6, Y: 6},
+		{X: 6, Y: 0},
+		{X: 0, Y: 3},
+		{X: 3, Y: 3},
+		{X: 3, Y: 6},
+	}
+	tableMapSt := tableMapFromTable(tableSt)
+	gameStateSt := &models.DominoGameState{
+		PlayerPosition: 2,
+		Hand: []models.Domino{
+			{X: 6, Y: 1},
+			{X: 5, Y: 3},
+			{X: 1, Y: 0},
+			{X: 0, Y: 0},
+			{X: 4, Y: 3},
+		},
+		Edges: models.Edges{
+			models.LeftEdge: &models.Domino{
+				X: 0,
+				Y: 2,
+			},
+			models.RightEdge: &models.Domino{
+				X: 3,
+				Y: 6,
+			},
+		},
+		Plays: []models.DominoPlay{
+			{
+				PlayerPosition: 1,
+				Bone: models.DominoInTable{
+					Edge:   models.LeftEdge,
+					Domino: models.Domino{X: 6, Y: 6},
+				},
+			},
+			{
+				PlayerPosition: 2,
+				Bone: models.DominoInTable{
+					Edge:   models.LeftEdge,
+					Domino: models.Domino{X: 5, Y: 6},
+				},
+			},
+			{
+				PlayerPosition: 3,
+				Bone: models.DominoInTable{
+					Edge:   models.RightEdge,
+					Domino: models.Domino{X: 6, Y: 0},
+				},
+			},
+			{
+				PlayerPosition: 4,
+				Bone: models.DominoInTable{
+					Edge:   models.LeftEdge,
+					Domino: models.Domino{X: 5, Y: 5},
+				},
+			},
+			{
+				PlayerPosition: 1,
+				Bone: models.DominoInTable{
+					Edge:   models.LeftEdge,
+					Domino: models.Domino{X: 2, Y: 5},
+				},
+			},
+			{
+				PlayerPosition: 2,
+				Bone: models.DominoInTable{
+					Edge:   models.RightEdge,
+					Domino: models.Domino{X: 0, Y: 3},
+				},
+			},
+			{
+				PlayerPosition: 3,
+				Bone: models.DominoInTable{
+					Edge:   models.LeftEdge,
+					Domino: models.Domino{X: 0, Y: 2},
+				},
+			},
+			{
+				PlayerPosition: 4,
+				Bone: models.DominoInTable{
+					Edge:   models.RightEdge,
+					Domino: models.Domino{X: 3, Y: 3},
+				},
+			},
+			{
+				PlayerPosition: 1,
+				Bone: models.DominoInTable{
+					Edge:   models.RightEdge,
+					Domino: models.Domino{X: 3, Y: 6},
+				},
+			},
+		},
+		Table:    tableSt,
+		TableMap: tableMapSt,
+	}
 
-	// first play
-	gameStates = append(gameStates, firstPlay())
-	plays = append(plays, game.Play(&gameStates[len(gameStates)-1]))
+	play := game.Play(gameStateSt)
+	if play.Pass() {
+		t.Fatal("Pass is not allowed")
+	}
 
-	// next play
-	gameStates = append(gameStates, secondPlay(&gameStates[len(gameStates)-1], &plays[len(plays)-1]))
+	fmt.Println("play:", play)
 
-	ndGameState := gameStates[1]
-	fmt.Println("hand:", ndGameState.Hand)
-	fmt.Println("table:", ndGameState.Table)
-	fmt.Println("edges:", ndGameState.Edges)
+	tableNd := []models.Domino{
+		{X: 5, Y: 0},
+		{X: 0, Y: 2},
+		{X: 2, Y: 5},
+		{X: 5, Y: 5},
+		{X: 5, Y: 6},
+		{X: 6, Y: 6},
+		{X: 6, Y: 0},
+		{X: 0, Y: 3},
+		{X: 3, Y: 3},
+		{X: 3, Y: 6},
+		{X: 6, Y: 1},
+		{X: 1, Y: 3},
+	}
+	tableMapNd := tableMapFromTable(tableNd)
 
-	plays = append(plays, game.Play(&gameStates[len(gameStates)-1]))
+	gameStateNd := &models.DominoGameState{
+		PlayerPosition: 2,
+		Hand: []models.Domino{
+			{X: 5, Y: 3},
+			{X: 1, Y: 0},
+			{X: 0, Y: 0},
+			{X: 4, Y: 3},
+		},
+		Edges: models.Edges{
+			models.LeftEdge: &models.Domino{
+				X: 5,
+				Y: 0,
+			},
+			models.RightEdge: &models.Domino{
+				X: 1,
+				Y: 3,
+			},
+		},
+		Plays: []models.DominoPlay{
+			{
+				PlayerPosition: 1,
+				Bone: models.DominoInTable{
+					Edge:   models.LeftEdge,
+					Domino: models.Domino{X: 6, Y: 6},
+				},
+			},
+			{
+				PlayerPosition: 2,
+				Bone: models.DominoInTable{
+					Edge:   models.LeftEdge,
+					Domino: models.Domino{X: 5, Y: 6},
+				},
+			},
+			{
+				PlayerPosition: 3,
+				Bone: models.DominoInTable{
+					Edge:   models.RightEdge,
+					Domino: models.Domino{X: 6, Y: 0},
+				},
+			},
+			{
+				PlayerPosition: 4,
+				Bone: models.DominoInTable{
+					Edge:   models.LeftEdge,
+					Domino: models.Domino{X: 5, Y: 5},
+				},
+			},
+			{
+				PlayerPosition: 1,
+				Bone: models.DominoInTable{
+					Edge:   models.LeftEdge,
+					Domino: models.Domino{X: 2, Y: 5},
+				},
+			},
+			{
+				PlayerPosition: 2,
+				Bone: models.DominoInTable{
+					Edge:   models.RightEdge,
+					Domino: models.Domino{X: 0, Y: 3},
+				},
+			},
+			{
+				PlayerPosition: 3,
+				Bone: models.DominoInTable{
+					Edge:   models.LeftEdge,
+					Domino: models.Domino{X: 0, Y: 2},
+				},
+			},
+			{
+				PlayerPosition: 4,
+				Bone: models.DominoInTable{
+					Edge:   models.RightEdge,
+					Domino: models.Domino{X: 3, Y: 3},
+				},
+			},
+			{
+				PlayerPosition: 1,
+				Bone: models.DominoInTable{
+					Edge:   models.RightEdge,
+					Domino: models.Domino{X: 3, Y: 6},
+				},
+			},
+			{
+				PlayerPosition: 2,
+				Bone: models.DominoInTable{
+					Edge:   models.RightEdge,
+					Domino: models.Domino{X: 6, Y: 1},
+				},
+			},
+			{
+				PlayerPosition: 3,
+				Bone: models.DominoInTable{
+					Edge:   models.RightEdge,
+					Domino: models.Domino{X: 1, Y: 3},
+				},
+			},
+			{
+				PlayerPosition: 4,
+				Bone: models.DominoInTable{
+					Edge:   models.LeftEdge,
+					Domino: models.Domino{X: 5, Y: 0},
+				},
+			},
+		},
+		Table:    tableNd,
+		TableMap: tableMapNd,
+	}
 
-	fmt.Println("play:", plays[len(plays)-1])
+	play = game.Play(gameStateNd)
+
+	fmt.Println("play:", play)
+
+	if (play.Bone.Domino != models.Domino{X: 3, Y: 5}) {
+		t.Fatal("Wrong play")
+	}
+}
+
+func tableMapFromTable(table []models.Domino) models.TableMap {
+	tableMap := make(models.TableMap, len(table))
+	for _, v := range table {
+		if _, ok := tableMap[v.X]; !ok {
+			tableMap[v.X] = make(models.TableBone, len(table))
+		}
+
+		if _, ok := tableMap[v.Y]; !ok {
+			tableMap[v.Y] = make(models.TableBone, len(table))
+		}
+
+		tableMap[v.X][v.Y] = true
+		tableMap[v.Y][v.X] = true
+	}
+
+	return tableMap
 }

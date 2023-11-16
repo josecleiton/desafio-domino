@@ -22,7 +22,7 @@ type DominoPlayWithPass struct {
 	Bone           *DominoInTable
 }
 
-type Edges map[Edge]*DominoPlay
+type Edges map[Edge]*Domino
 type TableBone map[int]bool
 type TableMap map[int]TableBone
 
@@ -43,19 +43,16 @@ func (play DominoPlayWithPass) String() string {
 	return fmt.Sprintf("{Player: %d, Bone: %v}", play.PlayerPosition, play.Bone)
 }
 
-func (e Edges) Bones() []DominoInTable {
-	bones := make([]DominoInTable, 0, len(e))
-	for _, v := range e {
-		bones = append(bones, v.Bone)
+func (d DominoInTable) GlueableSide() int {
+	if d.Edge == LeftEdge {
+		return d.X
 	}
 
-	return bones
+	return d.Y
 }
+
 func (d DominoInTable) Glue(other Domino) *Domino {
-	side := d.X
-	if d.Edge == RightEdge {
-		side = d.Y
-	}
+	side := d.GlueableSide()
 
 	if side == other.X {
 		return &other

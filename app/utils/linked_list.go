@@ -42,7 +42,12 @@ func (l LinkedList[T]) Tail() *Node[T] {
 	return l.tail
 }
 
+func (l *LinkedList[T]) incLength() {
+	l.length++
+}
+
 func (l *LinkedList[T]) Push(data *T) (*LinkedList[T], int) {
+	defer l.incLength()
 	if l.head == nil {
 		l.head = new(Node[T])
 		l.tail = l.head
@@ -54,8 +59,6 @@ func (l *LinkedList[T]) Push(data *T) (*LinkedList[T], int) {
 	l.tail.Next = new(Node[T])
 	*l.tail.Next = Node[T]{Data: data, Prev: l.tail}
 	l.tail = l.tail.Next
-
-	l.length++
 
 	return l, l.Len()
 }

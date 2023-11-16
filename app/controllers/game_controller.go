@@ -174,12 +174,11 @@ func gameRequestToDomain(request *gameStateRequest) (*models.DominoGameState, er
 
 	playsRequestLen := len(request.Plays)
 	if playsRequestLen > 1 {
-		edges[models.LeftEdge] = &plays[0]
-		edges[models.RightEdge] = &plays[len(plays)-1]
+		edges[models.LeftEdge] = &plays[0].Bone.Domino
+		edges[models.RightEdge] = &plays[len(plays)-1].Bone.Domino
 	} else if playsRequestLen == 1 {
-		leftEdge := plays[0]
+		leftEdge := plays[0].Bone.Domino
 		rightEdge := leftEdge
-		leftEdge.Bone.Edge = models.LeftEdge
 
 		edges[models.LeftEdge] = &leftEdge
 		edges[models.RightEdge] = &rightEdge

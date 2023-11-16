@@ -5,6 +5,7 @@ import "fmt"
 const (
 	dominoUnicodeHorizontal = '🀱'
 	dominoUnicodeVertical   = '🁣'
+	thinSpace               = ' '
 )
 
 func (d Domino) String() string {
@@ -22,7 +23,7 @@ func (e Edges) String() string {
 	result := ""
 	for k, v := range e {
 		if v != nil {
-			result += fmt.Sprintf("{%v, %v} ", k, v.Bone.Domino)
+			result += fmt.Sprintf("{%v, %v} ", k, v)
 		}
 	}
 
