@@ -32,9 +32,9 @@ type playStateRequest struct {
 }
 
 type playStateResponse struct {
-	Player    int                `json:"jogador"`
-	Bone      *string            `json:"pedra,omitempty"`
-	Direction *externalDirection `json:"lado,omitempty"`
+	Player    models.PlayerPosition `json:"jogador"`
+	Bone      *string               `json:"pedra,omitempty"`
+	Direction *externalDirection    `json:"lado,omitempty"`
 }
 
 func GameHandler(w http.ResponseWriter, r *http.Request) {
@@ -154,7 +154,7 @@ func gameRequestToDomain(request *gameStateRequest) (*models.DominoGameState, er
 		}
 
 		plays = append(plays, models.DominoPlay{
-			PlayerPosition: play.Player,
+			PlayerPosition: models.PlayerPosition(play.Player),
 			Bone: models.DominoInTable{
 				Domino: *domino,
 				Edge:   edge,
@@ -185,7 +185,7 @@ func gameRequestToDomain(request *gameStateRequest) (*models.DominoGameState, er
 	}
 
 	return &models.DominoGameState{
-		PlayerPosition: request.Player,
+		PlayerPosition: models.PlayerPosition(request.Player),
 		Hand:           hand,
 		TableMap:       tableMap,
 		Table:          table,

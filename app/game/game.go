@@ -12,16 +12,15 @@ import (
 var hand []models.Domino
 var plays []models.DominoPlayWithPass
 var states *utils.LinkedList[models.DominoGameState]
-var player int
-var unavailableBones models.TableMap
+var player models.PlayerPosition
+var unavailableBones models.UnavailableBonesPlayer
 
 var unavailableBonesMutex sync.Mutex
 var intermediateStateWg sync.WaitGroup
 
 func init() {
 	states = utils.NewLinkedList[models.DominoGameState]()
-	unavailableBones = make(models.TableMap, models.DominoMaxPlayer)
-	player = -1
+	unavailableBones = make(models.UnavailableBonesPlayer, models.DominoMaxPlayer)
 }
 
 func Play(state *models.DominoGameState) models.DominoPlayWithPass {
@@ -113,13 +112,13 @@ func intermediateStates(state *models.DominoGameState) {
 		firstPlayer := nonEvaluatedPlays[0].PlayerPosition
 
 		for i := 0; i < models.DominoMaxPlayer; i++ {
-			currentPlayerIdx := (firstPlayer + i - 1) % models.DominoMaxPlayer
+			currentPlayer := firstPlayer.Add(i)
 
-			if i < nonEvaluatedPlaysLen && nonEvaluatedPlays[i].PlayerPosition-1 == currentPlayerIdx {
+			if i < nonEvaluatedPlaysLen && nonEvaluatedPlays[i].PlayerPosition == currentPlayer {
 				continue
 			}
 
-			playerPassed := currentPlayerIdx + 1
+			playerPassed := currentPlayer
 
 			if _, ok := unavailableBones[playerPassed]; !ok {
 				unavailableBones[playerPassed] = make(models.TableBone, models.DominoUniqueBones)
@@ -183,12 +182,23 @@ func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 			unavailableBones[player][ep.Y] = true
 		}
 
+		allPlays := make([]models.DominoPlay, 0, len(state.Plays))
+		allPlays = append(allPlays, state.Plays...)
+
+		defer generateTree(state, guessTreeGenerate{
+			Table: state.Table,
+			Hand:  hand,
+			Plays: allPlays,
+		})
+
 		return models.DominoPlayWithPass{PlayerPosition: player}
 	}
 
 	canPlayBoth := leftLen > 0 && rightLen > 0
 	if !canPlayBoth {
-		return oneSidedPlay(left, right)
+		play := oneSidedPlay(left, right)
+		defer generateTreeByPlay(state, &play)
+		return play
 	}
 
 	countResult := countPlay(state, left, right)

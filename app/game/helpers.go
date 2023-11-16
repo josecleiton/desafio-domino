@@ -2,8 +2,8 @@ package game
 
 import "github.com/josecleiton/domino/app/models"
 
-func getDuo() int {
-	return ((player + 1) % models.DominoMaxPlayer) + 1
+func getDuo() models.PlayerPosition {
+	return player.Add(2)
 }
 
 func handCanPlayThisTurn(state *models.DominoGameState) ([]models.DominoInTable, []models.DominoInTable) {
@@ -75,11 +75,11 @@ func countBones(state *models.DominoGameState, bone models.DominoInTable) int {
 }
 
 func countPasses(bone models.DominoInTable) int {
-	firstPlayerIdx := player - 1
+	firstPlayer := player
 	passes := 0
 
 	for i := 0; i < models.DominoMaxPlayer; i++ {
-		currentPlayer := (firstPlayerIdx+i)%models.DominoMaxPlayer + 1
+		currentPlayer := firstPlayer.Add(i)
 		if currentPlayer == getDuo() || currentPlayer == player {
 			continue
 		}
