@@ -320,7 +320,7 @@ func countPlay(state *models.DominoGameState, left, right []models.DominoInTable
 				Y: ep.X,
 			},
 		})
-		if len(left) == 1 && leftBonesInGame == models.DominoUniqueBones-1 {
+		if len(left)+leftBonesInGame == models.DominoUniqueBones {
 			play := playFromDominoInTable(right[0])
 			return &play
 		}
@@ -334,7 +334,7 @@ func countPlay(state *models.DominoGameState, left, right []models.DominoInTable
 				Y: ep.Y,
 			},
 		})
-		if len(right) == 1 && rightBonesInGame == models.DominoUniqueBones-1 {
+		if len(right)+rightBonesInGame == models.DominoUniqueBones {
 			play := playFromDominoInTable(left[0])
 			return &play
 		}
@@ -462,17 +462,46 @@ func handCanPlayThisTurn(state *models.DominoGameState) ([]models.DominoInTable,
 
 func oneSidedPlay(left, right []models.DominoInTable) models.DominoPlayWithPass {
 	if len(left) > 0 {
-		return maximizedPlayWithBones(left)
+		return commonMaximizedPlay(left)
 	}
 
-	return maximizedPlayWithBones(right)
+	return commonMaximizedPlay(right)
 }
 
-func maximizedPlayWithBones(bones []models.DominoInTable) models.DominoPlayWithPass {
+type indexedCount struct {
+	Idx   int
+	Count int
+}
 
-	maxBone := bones[0]
+func commonMaximizedPlay(bones []models.DominoInTable) models.DominoPlayWithPass {
 
-	return playFromDominoInTable(maxBone)
+	commonBones := make([]indexedCount, models.DominoUniqueBones)
+	for _, eb := range bones {
+		for _, hb := range hand {
+			if bone := eb.Glue(hb); bone != nil {
+				side := eb.GlueableSide()
+				commonBones[side].Count++
+				commonBones[side].Idx = side
+			}
+		}
+	}
+
+	sort.Slice(commonBones, func(i, j int) bool {
+		return commonBones[i].Count >= commonBones[j].Count
+	})
+
+	if commonBones[0].Count != 1 {
+		side := commonBones[0].Idx
+		for _, bone := range bones {
+			if bone.GlueableSide() != side {
+				continue
+			}
+
+			return playFromDominoInTable(bone)
+		}
+	}
+
+	return playFromDominoInTable(bones[0])
 }
 
 func playFromDominoInTable(bone models.DominoInTable) models.DominoPlayWithPass {
