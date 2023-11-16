@@ -109,11 +109,11 @@ func duoPlay(state *models.DominoGameState, left, right []models.DominoInTable) 
 	}
 
 	if cantPlayLeft {
-		playsRespectingDuo = append(playsRespectingDuo, playFromDominoInTable(filteredLeft[0]))
+		playsRespectingDuo = append(playsRespectingDuo, playFromDominoInTable(filteredRight[0]))
 	}
 
 	if cantPlayRight {
-		playsRespectingDuo = append(playsRespectingDuo, playFromDominoInTable(filteredRight[0]))
+		playsRespectingDuo = append(playsRespectingDuo, playFromDominoInTable(filteredLeft[0]))
 	}
 
 	if len(playsRespectingDuo) == 0 {

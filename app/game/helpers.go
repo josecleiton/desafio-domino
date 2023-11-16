@@ -39,7 +39,7 @@ func duoCanPlayWithBoneGlue(left, right []models.DominoInTable) ([]models.Domino
 	unavailableBonesMutex.Lock()
 	defer unavailableBonesMutex.Unlock()
 	for _, bone := range left {
-		if v, ok := unavailableBones[duo][bone.Y]; ok && v {
+		if v, ok := unavailableBones[duo][bone.GlueableSide()]; ok && v {
 			continue
 		}
 
@@ -47,7 +47,7 @@ func duoCanPlayWithBoneGlue(left, right []models.DominoInTable) ([]models.Domino
 	}
 
 	for _, bone := range right {
-		if v, ok := unavailableBones[duo][bone.Y]; ok && v {
+		if v, ok := unavailableBones[duo][bone.GlueableSide()]; ok && v {
 			continue
 		}
 
