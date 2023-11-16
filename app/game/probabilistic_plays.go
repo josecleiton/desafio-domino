@@ -104,7 +104,7 @@ func generateTree(state *models.DominoGameState, generate guessTreeGenerate) {
 	}
 
 	nextPlayer := (state.PlayerPosition + 1) % models.DominoMaxPlayer
-	if len(state.Plays)+len(state.Hand)+len(unavailableBonesCopy[nextPlayer]) < startGeneratingTreeDelta {
+	if len(state.Table)+len(state.Hand)+len(unavailableBonesCopy[nextPlayer]) < startGeneratingTreeDelta {
 		return
 	}
 
@@ -142,6 +142,7 @@ func generateTreePlays(init *guessTreeGenerateStack) ([]*guessTreeNode, []*guess
 
 	for len(stack) > 0 {
 		top := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
 
 		dominoes := restingDominoes(top.generate, top.player, top.unavailableBones)
 
@@ -162,23 +163,27 @@ func generateTreePlays(init *guessTreeGenerateStack) ([]*guessTreeNode, []*guess
 		combinationGen := combin.NewCombinationGenerator(n, k)
 		for combinationGen.Next() {
 			cs := combinationGen.Combination(storedIdx)
+
 			possibleHand := make([]models.Domino, 0, len(cs))
 			for _, idx := range cs {
 				possibleHand = append(possibleHand, dominoes[idx])
 			}
-			top.node.Children = append(top.node.Children, &guessTreeNode{
+
+			childNode := &guessTreeNode{
 				Player: top.player.Add(1),
 				Table:  top.generate.Table,
 				Parent: top.node,
-			})
+			}
 
 			stack = append(stack, &guessTreeGenerateStack{
 				player: top.player,
 				generate: guessTreeGenerate{
 					Hand: possibleHand,
 				},
+				node: childNode,
 			})
 
+			top.node.Children = append(top.node.Children, childNode)
 		}
 
 	}
