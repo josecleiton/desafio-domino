@@ -1,17 +1,17 @@
 package game
 
 import (
+	"container/ring"
 	"log"
 	"sort"
 	"sync"
 
 	"github.com/josecleiton/domino/app/models"
-	"github.com/josecleiton/domino/app/utils"
 )
 
 var hand []models.Domino
 var plays []models.DominoPlayWithPass
-var states *utils.LinkedList[models.DominoGameState]
+var states *ring.Ring
 var player models.PlayerPosition
 var unavailableBones models.UnavailableBonesPlayer
 
@@ -19,7 +19,6 @@ var unavailableBonesMutex sync.Mutex
 var intermediateStateWg sync.WaitGroup
 
 func init() {
-	states = utils.NewLinkedList[models.DominoGameState]()
 	unavailableBones = make(models.UnavailableBonesPlayer, models.DominoMaxPlayer)
 }
 
@@ -30,20 +29,29 @@ func Play(state *models.DominoGameState) models.DominoPlayWithPass {
 	}
 
 	if !hasToInitialize {
-		if s := states.HeadSafe(); s == nil || len(s.Prev.Data.Plays) > len(state.Plays) {
+		if states.Len() > 0 {
+			if prevState := states.Prev(); prevState == nil || len(prevState.Value.(*models.DominoGameState).Plays) > len(state.Plays) {
+				hasToInitialize = true
+			}
+		} else {
 			hasToInitialize = true
 		}
 	}
 
 	if hasToInitialize {
 		initialize(state)
+	} else {
+		otherRing := ring.New(1)
+		otherRing.Value = state
+
+		states = states.Link(otherRing)
 	}
 
-	states.Push(state)
 	forLimit := states.Len() - models.DominoMaxPlayer
-	for i := 0; i < forLimit; i++ {
-		states.PopFront()
+	if forLimit > 0 {
+		states.Prev().Unlink(forLimit)
 	}
+
 	hand = make([]models.Domino, 0, len(state.Hand))
 	hand = append(hand, state.Hand...)
 	sort.Slice(hand, func(i, j int) bool {
@@ -79,14 +87,14 @@ func Play(state *models.DominoGameState) models.DominoPlayWithPass {
 }
 
 func intermediateStates(state *models.DominoGameState) {
-	current := states.HeadSafe()
+	current := states
 	statesLen := states.Len()
 	for i := 0; current != nil && i < statesLen; i++ {
-		st := current.Data
+		st := current.Value.(*models.DominoGameState)
 
 		var nd *models.DominoGameState
-		if current.Next != nil {
-			nd = current.Next.Data
+		if current.Next() != nil {
+			nd = current.Next().Value.(*models.DominoGameState)
 		}
 
 		stPlaysLen := len(st.Plays)
@@ -140,11 +148,11 @@ func intermediateStates(state *models.DominoGameState) {
 			unavailableBones[playerPassed][playOnReversedEdge.Bone.GlueableSide()] = true
 		}
 
-		current = current.Next
+		current = current.Next()
 	}
 
 	for states.Len() > 1 {
-		states.PopFront()
+		states.Prev().Unlink(1)
 	}
 }
 
@@ -152,7 +160,8 @@ func initialize(state *models.DominoGameState) {
 	player = state.PlayerPosition
 	clear(plays)
 	clear(unavailableBones)
-	states.Clear()
+	states = ring.New(1)
+	states.Value = state
 }
 
 func initialPlay(state *models.DominoGameState) models.DominoPlayWithPass {
@@ -185,7 +194,7 @@ func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 		allPlays := make([]models.DominoPlay, 0, len(state.Plays))
 		allPlays = append(allPlays, state.Plays...)
 
-		defer generateTree(state, guessTreeGenerate{
+		generateTree(state, guessTreeGenerate{
 			Player: player,
 			Hand:   hand,
 			Plays:  allPlays,
@@ -197,12 +206,13 @@ func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 	canPlayBoth := leftLen > 0 && rightLen > 0
 	if !canPlayBoth {
 		play := oneSidedPlay(left, right)
-		defer generateTreeByPlay(state, &play)
+		generateTreeByPlay(state, &play)
 		return play
 	}
 
 	countResult := countPlay(state, left, right)
 	if countResult != nil {
+		generateTreeByPlay(state, countResult)
 		return *countResult
 	}
 
@@ -238,20 +248,27 @@ func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 			*otherEdge = dominoInTableFromEdge(state, models.LeftEdge)
 		}
 
+		play := duoResult
+
 		duoCanPlayOtherEdge := duoCanPlayEdge(state, *otherEdge)
 		if passes > 1 || duoCanPlayOtherEdge {
-			return *passedResult
+			play = passedResult
 		}
 
-		return *duoResult
+		generateTreeByPlay(state, play)
+
+		return *play
 	}
 
 	possiblePlays := []*models.DominoPlayWithPass{passedResult, duoResult}
 
 	for _, p := range possiblePlays {
-		if p != nil {
-			return *p
+		if p == nil {
+			continue
 		}
+
+		generateTreeByPlay(state, p)
+		return *p
 	}
 
 	log.Println("Something went wrong, no play found")
