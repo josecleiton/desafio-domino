@@ -16,7 +16,7 @@ type guessTreeNode struct {
 	Player   models.PlayerPosition
 	Table    []models.Domino
 	Hand     []models.Domino
-	Children []*guessTreeNode
+	Children *list.List
 	Parent   *guessTreeNode
 	Depth    int
 }
@@ -35,7 +35,7 @@ type guessTreeNodeDominoInTable struct {
 type guessTree struct {
 	Cursor *guessTreeNode
 	Root   *guessTreeNode
-	Leafs  []*guessTreeLeaf
+	Leafs  *list.List
 }
 
 type guessTreeGenerate struct {
@@ -71,11 +71,12 @@ func (g guessTreeGenerate) GeneratePlays(player models.PlayerPosition, hand []mo
 
 			result = append(result, &guessTreeNodeDominoInTable{
 				guessTreeNode: guessTreeNode{
-					Player: player,
-					Table:  newTable,
-					Parent: parent,
-					Hand:   hand,
-					Depth:  parent.Depth + 1,
+					Player:   player,
+					Table:    newTable,
+					Parent:   parent,
+					Hand:     hand,
+					Depth:    parent.Depth + 1,
+					Children: list.New(),
 				},
 				bone: models.DominoInTable{
 					Edge:   models.LeftEdge,
@@ -92,11 +93,12 @@ func (g guessTreeGenerate) GeneratePlays(player models.PlayerPosition, hand []mo
 
 			result = append(result, &guessTreeNodeDominoInTable{
 				guessTreeNode: guessTreeNode{
-					Player: player,
-					Table:  newTable,
-					Parent: parent,
-					Hand:   hand,
-					Depth:  parent.Depth + 1,
+					Player:   player,
+					Table:    newTable,
+					Parent:   parent,
+					Hand:     hand,
+					Depth:    parent.Depth + 1,
+					Children: list.New(),
 				},
 				bone: models.DominoInTable{
 					Edge:   models.RightEdge,
@@ -125,8 +127,8 @@ func (t guessTree) RepositionCursor(generate guessTreeGenerate) *guessTreeNode {
 			return node
 		}
 
-		for _, child := range node.Children {
-			queue.PushBack(child)
+		for current := node.Children.Front(); current != nil; current = current.Next() {
+			queue.PushBack(current.Value.(*guessTreeNode))
 		}
 	}
 
@@ -156,7 +158,8 @@ func maximizeWinningChancesPlay(plays ...*models.DominoPlayWithPass) *models.Dom
 			winningLeafDepths := playWinningTable[play]
 			drawLeafDepths := playDrawTable[play]
 
-			for _, leaf := range tree.Leafs {
+			for current := tree.Leafs.Front(); current != nil; current = current.Next() {
+				leaf := current.Value.(*guessTreeLeaf)
 				deltaDepth := leaf.Depth - tree.Cursor.Depth
 
 				if leaf.Draw {
@@ -332,10 +335,13 @@ func generateTree(state *models.DominoGameState, generate guessTreeGenerate) {
 		tree = new(guessTree)
 
 		node := new(guessTreeNode)
-		node.Player = state.PlayerPosition
-		node.Table = table
-		node.Hand = state.Hand
-		node.Depth = 0
+		*node = guessTreeNode{
+			Player:   state.PlayerPosition,
+			Table:    table,
+			Hand:     state.Hand,
+			Depth:    0,
+			Children: list.New(),
+		}
 
 		tree.Root = node
 		tree.Cursor = node
@@ -354,17 +360,18 @@ func generateTreePlays(init *guessTreeGenerateStack) *guessTree {
 		return tree
 	}
 
-	stack := make([]*guessTreeGenerateStack, 1, combin.Binomial(startGeneratingTreeDelta, startGeneratingTreeDelta/2-1))
-	stack[0] = init
+	stack := list.New()
+	stack.PushBack(init)
 
-	leafs := make([]*guessTreeLeaf, 0, models.DominoLength)
+	leafs := list.New()
 
-	for len(stack) > 0 {
-		top := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
+	for stack.Len() > 0 {
+		element := stack.Back()
+		top := element.Value.(*guessTreeGenerateStack)
+		stack.Remove(element)
 
 		if len(top.node.Table) == models.DominoLength {
-			leafs = append(leafs, &guessTreeLeaf{
+			leafs.PushBack(&guessTreeLeaf{
 				guessTreeNode: guessTreeNode{
 					Player: top.player,
 					Hand:   top.node.Hand,
@@ -379,7 +386,7 @@ func generateTreePlays(init *guessTreeGenerateStack) *guessTree {
 
 		passLeaf := leafFromPasses(top)
 		if passLeaf != nil {
-			leafs = append(leafs, passLeaf)
+			leafs.PushBack(passLeaf)
 			continue
 		}
 
@@ -398,8 +405,6 @@ func generateTreePlays(init *guessTreeGenerateStack) *guessTree {
 		n := len(dominoes)
 		k := models.DominoHandLength - len(currentPlayerPlays)
 
-		top.node.Children = make([]*guessTreeNode, 0, combin.Binomial(n, k))
-
 		storedIdx := make([]int, k)
 		combinationGen := combin.NewCombinationGenerator(n, k)
 		for combinationGen.Next() {
@@ -414,12 +419,13 @@ func generateTreePlays(init *guessTreeGenerateStack) *guessTree {
 
 			// player passed
 			if len(childNodes) == 0 {
-				top.node.Children = append(top.node.Children, &guessTreeNode{
-					Player: currentPlayer,
-					Table:  top.node.Table,
-					Parent: top.node,
-					Hand:   possibleHand,
-					Depth:  top.node.Depth + 1,
+				top.node.Children.PushBack(&guessTreeNode{
+					Player:   currentPlayer,
+					Table:    top.node.Table,
+					Parent:   top.node,
+					Hand:     possibleHand,
+					Depth:    top.node.Depth + 1,
+					Children: list.New(),
 				})
 				generate := guessTreeGenerate{
 					Hand:     possibleHand,
@@ -443,18 +449,18 @@ func generateTreePlays(init *guessTreeGenerateStack) *guessTree {
 				unavailableBones[currentPlayer][top.node.Table[0].X] = true
 				unavailableBones[currentPlayer][top.node.Table[len(top.node.Table)-1].Y] = true
 
-				stack = append(stack, &guessTreeGenerateStack{
+				stack.PushBack(&guessTreeGenerateStack{
 					player:           currentPlayer,
 					generate:         generate,
 					unavailableBones: unavailableBones,
-					node:             top.node.Children[len(top.node.Children)-1],
+					node:             top.node.Children.Back().Value.(*guessTreeNode),
 				})
 
 				continue
 			}
 
 			for _, childNode := range childNodes {
-				top.node.Children = append(top.node.Children, &childNode.guessTreeNode)
+				top.node.Children.PushBack(&childNode.guessTreeNode)
 
 				possiblePlays := make([]models.DominoPlay, 0, len(top.generate.Plays)+1)
 				possiblePlays = append(possiblePlays, top.generate.Plays...)
@@ -474,7 +480,7 @@ func generateTreePlays(init *guessTreeGenerateStack) *guessTree {
 					}
 				}
 
-				stack = append(stack, &guessTreeGenerateStack{
+				stack.PushBack(&guessTreeGenerateStack{
 					player:           currentPlayer,
 					unavailableBones: top.unavailableBones,
 					generate: guessTreeGenerate{
