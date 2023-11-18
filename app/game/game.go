@@ -239,6 +239,10 @@ func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 	wg.Wait()
 
 	if duoResult != nil && passedResult != nil {
+		if maximizedPlay := maximizeWinningChancesPlay(duoResult, passedResult); maximizedPlay != nil {
+			return *maximizedPlay
+		}
+
 		passes := countPasses(*passedResult.Bone)
 
 		otherEdge := new(models.DominoInTable)
