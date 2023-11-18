@@ -146,26 +146,37 @@ func maximizeWinningChancesPlay(plays ...*models.DominoPlayWithPass) *models.Dom
 	treeTraversingWg.Add(len(plays))
 
 	playWinningTable := make(map[*models.DominoPlayWithPass][]int, len(plays))
+	playDrawTable := make(map[*models.DominoPlayWithPass][]int, len(plays))
 
 	for _, play := range plays {
 		playWinningTable[play] = []int{}
+		playDrawTable[play] = []int{}
 		go func(play *models.DominoPlayWithPass) {
 			defer treeTraversingWg.Done()
 			winningLeafDepths := playWinningTable[play]
+			drawLeafDepths := playDrawTable[play]
 
 			for _, leaf := range tree.Leafs {
+				deltaDepth := leaf.Depth - tree.Cursor.Depth
+
+				if leaf.Draw {
+					drawLeafDepths = append(drawLeafDepths, deltaDepth)
+					continue
+				}
+
 				if !leaf.Winner {
 					continue
 				}
 
-				winningLeafDepths = append(
-					winningLeafDepths,
-					leaf.Depth-tree.Cursor.Depth,
-				)
+				winningLeafDepths = append(winningLeafDepths, deltaDepth)
 			}
 
 			sort.Slice(winningLeafDepths, func(i, j int) bool {
 				return winningLeafDepths[i] < winningLeafDepths[j]
+			})
+
+			sort.Slice(drawLeafDepths, func(i, j int) bool {
+				return drawLeafDepths[i] < drawLeafDepths[j]
 			})
 		}(play)
 	}
@@ -180,17 +191,34 @@ func maximizeWinningChancesPlay(plays ...*models.DominoPlayWithPass) *models.Dom
 		delete(playWinningTable, k)
 	}
 
+	playWinningTableLen, playDrawTableLen := len(playWinningTable), len(playDrawTable)
+	if playWinningTableLen == 0 && playDrawTableLen == 0 {
+		return nil
+	}
+
+	if playWinningTableLen == 0 {
+		return betterPlayFromPlayDepth(plays, playDrawTable)
+	}
+
+	return betterPlayFromPlayDepth(plays, playWinningTable)
+}
+
+func betterPlayFromPlayDepth(plays []*models.DominoPlayWithPass, playDepthTable map[*models.DominoPlayWithPass][]int) *models.DominoPlayWithPass {
+	if len(playDepthTable) == 0 {
+		return nil
+	}
+
 	betterPlay := plays[0]
 	for _, play := range plays[1:] {
-		if playWinningTable[betterPlay][0] <= 1 {
+		if playDepthTable[betterPlay][0] <= 1 {
 			return betterPlay
 		}
 
-		if playWinningTable[play][0] <= 1 {
+		if playDepthTable[play][0] <= 1 {
 			return play
 		}
 
-		if len(playWinningTable[betterPlay]) <= len(playWinningTable[play]) {
+		if len(playDepthTable[betterPlay]) <= len(playDepthTable[play]) {
 			continue
 		}
 
