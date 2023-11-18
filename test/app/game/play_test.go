@@ -1,6 +1,7 @@
 package game
 
 import (
+	"container/list"
 	"fmt"
 	"testing"
 
@@ -147,8 +148,7 @@ func TestPlayGlue(t *testing.T) {
 	}
 
 	if !fromHand {
-		fmt.Printf("Bone %v not found in hand %v\n", ndPlay.Bone.Domino, ndGameState.Hand)
-		t.Fail()
+		t.Errorf("Bone %v not found in hand %v\n", ndPlay.Bone.Domino, ndGameState.Hand)
 	}
 
 	fmt.Println("newPlay:", ndPlay)
@@ -392,6 +392,133 @@ func TestPassedPlay(t *testing.T) {
 
 	if (play.Bone.Domino != models.Domino{X: 3, Y: 5}) {
 		t.Fatal("Wrong play")
+	}
+}
+
+func TestGenerateTree(t *testing.T) {
+	plays := []models.DominoPlay{
+		{
+			PlayerPosition: 1,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{X: 6, Y: 6},
+			},
+		},
+		{
+			PlayerPosition: 2,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{X: 1, Y: 6},
+			},
+		},
+		{
+			PlayerPosition: 3,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{X: 0, Y: 1},
+			},
+		},
+		{
+			PlayerPosition: 4,
+			Bone: models.DominoInTable{
+				Edge:   models.RightEdge,
+				Domino: models.Domino{X: 6, Y: 2},
+			},
+		},
+		{
+			PlayerPosition: 1,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{X: 0, Y: 0},
+			},
+		},
+		{
+			PlayerPosition: 2,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{X: 3, Y: 0},
+			},
+		},
+		{
+			PlayerPosition: 3,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{X: 5, Y: 3},
+			},
+		},
+		{
+			PlayerPosition: 4,
+			Bone: models.DominoInTable{
+				Edge:   models.RightEdge,
+				Domino: models.Domino{X: 2, Y: 2},
+			},
+		},
+		{
+			PlayerPosition: 1,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{X: 5, Y: 5},
+			},
+		},
+		{
+			PlayerPosition: 2,
+			Bone: models.DominoInTable{
+				Edge:   models.RightEdge,
+				Domino: models.Domino{X: 2, Y: 1},
+			},
+		},
+		{
+			PlayerPosition: 3,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{X: 0, Y: 5},
+			},
+		},
+		{
+			PlayerPosition: 4,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{X: 6, Y: 0},
+			},
+		},
+	}
+	tableL := list.New()
+
+	for _, p := range plays {
+		if p.Bone.Edge == models.LeftEdge {
+			tableL.PushFront(p.Bone.Domino)
+		} else {
+			tableL.PushBack(p.Bone.Domino)
+		}
+	}
+
+	table := make([]models.Domino, 0, tableL.Len())
+	for current := tableL.Front(); current != nil; current = current.Next() {
+		table = append(table, current.Value.(models.Domino))
+	}
+
+	tableMap := tableMapFromTable(table)
+
+	state := &models.DominoGameState{
+		PlayerPosition: 1,
+		Hand: []models.Domino{
+			{X: 6, Y: 5},
+			{X: 1, Y: 1},
+			{X: 3, Y: 1},
+			{X: 4, Y: 1},
+		},
+		Table:    table,
+		TableMap: tableMap,
+		Edges: models.Edges{
+			models.LeftEdge:  &table[0],
+			models.RightEdge: &table[len(table)-1],
+		},
+		Plays: plays,
+	}
+	play := game.Play(state)
+
+	if play.Pass() {
+		t.Error("Pass is not allowed")
 	}
 }
 

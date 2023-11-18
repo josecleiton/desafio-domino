@@ -50,7 +50,7 @@ type guessTreeGenerateStack struct {
 	node             *guessTreeNode
 }
 
-const startGeneratingTreeDelta = 8
+const startGeneratingTreeDelta = 12
 
 var tree *guessTree
 var treeGeneratingWg sync.WaitGroup
@@ -441,17 +441,21 @@ func leafFromPasses(top *guessTreeGenerateStack) *guessTreeLeaf {
 }
 
 func restingDominoes(generate guessTreeGenerate, player models.PlayerPosition, ub models.UnavailableBonesPlayer) []models.Domino {
-	result := make(models.TableMap, models.DominoUniqueBones)
+	tableMap := make(models.TableMap, models.DominoUniqueBones)
+
+	const maxBone = models.DominoMaxBone
+	for i := models.DominoMinBone; i <= maxBone; i++ {
+		tableMap[i] = make(models.TableBone, models.DominoUniqueBones)
+	}
 
 	for boneSide, ok := range ub[player] {
 		if !ok {
 			continue
 		}
 
-		result[boneSide] = make(models.TableBone, models.DominoUniqueBones)
-		for i := models.DominoMinBone; i < models.DominoMaxBone; i++ {
-			result[boneSide][i] = true
-			result[i][boneSide] = true
+		for i := models.DominoMinBone; i <= models.DominoMaxBone; i++ {
+			tableMap[boneSide][i] = true
+			tableMap[i][boneSide] = true
 		}
 	}
 
@@ -461,27 +465,21 @@ func restingDominoes(generate guessTreeGenerate, player models.PlayerPosition, u
 				continue
 			}
 
-			if _, ok := result[boneX]; !ok {
-				result[boneX] = make(models.TableBone, models.DominoUniqueBones)
-			}
-
-			if _, ok := result[boneY]; !ok {
-				result[boneY] = make(models.TableBone, models.DominoUniqueBones)
-			}
-
-			result[boneX][boneY] = true
-			result[boneY][boneX] = true
+			tableMap[boneX][boneY] = true
+			tableMap[boneY][boneX] = true
 		}
 	}
 
+	for _, v := range generate.Hand {
+		tableMap[v.X][v.Y] = true
+		tableMap[v.Y][v.X] = true
+	}
+
 	dominoes := make([]models.Domino, 0, models.DominoLength)
-	limit := models.DominoMaxBone
-	for i := models.DominoMinBone; i < limit; i++ {
-		for j := i; j < limit; j++ {
-			if tb, ok := result[i]; ok {
-				if unavailable, ok := tb[j]; ok && unavailable {
-					continue
-				}
+	for i := models.DominoMinBone; i <= maxBone; i++ {
+		for j := i; j <= maxBone; j++ {
+			if unavailable, ok := tableMap[i][j]; ok && unavailable {
+				continue
 			}
 
 			dominoes = append(dominoes, models.Domino{X: i, Y: j})
