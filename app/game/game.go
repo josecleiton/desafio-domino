@@ -284,7 +284,9 @@ func duoCanPlayEdges(state *models.DominoGameState) (bool, bool) {
 	unavailableBonesMutex.Lock()
 	defer unavailableBonesMutex.Unlock()
 
-	leftEdge, rightEdge := dominoInTableFromEdge(state, models.LeftEdge), dominoInTableFromEdge(state, models.RightEdge)
+	leftEdge, rightEdge := dominoInTableFromEdge(state, models.LeftEdge),
+		dominoInTableFromEdge(state, models.RightEdge)
+
 	return duoCanPlayEdge(state, leftEdge),
 		duoCanPlayEdge(state, rightEdge)
 }

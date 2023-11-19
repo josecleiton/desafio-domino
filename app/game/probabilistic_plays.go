@@ -145,7 +145,9 @@ func (t guessTree) RepositionCursor(generate guessTreeGenerate) *guessTreeNode {
 	return t.Cursor
 }
 
-func maximizeWinningChancesPlay(plays ...*models.DominoPlayWithPass) *models.DominoPlayWithPass {
+func maximizeWinningChancesPlay(
+	plays ...*models.DominoPlayWithPass,
+) *models.DominoPlayWithPass {
 	if tree == nil || len(plays) == 0 {
 		return nil
 	}
@@ -171,7 +173,10 @@ func maximizeWinningChancesPlay(plays ...*models.DominoPlayWithPass) *models.Dom
 				deltaDepth := leaf.Depth - tree.Cursor.Depth
 
 				if leaf.Draw && leaf.Winner {
-					drawLeafDepths = append(drawLeafDepths, deltaDepth)
+					drawLeafDepths = append(
+						drawLeafDepths,
+						deltaDepth,
+					)
 					continue
 				}
 
@@ -179,7 +184,10 @@ func maximizeWinningChancesPlay(plays ...*models.DominoPlayWithPass) *models.Dom
 					continue
 				}
 
-				winningLeafDepths = append(winningLeafDepths, deltaDepth)
+				winningLeafDepths = append(
+					winningLeafDepths,
+					deltaDepth,
+				)
 			}
 
 			sort.Slice(winningLeafDepths, func(i, j int) bool {
@@ -209,7 +217,8 @@ func maximizeWinningChancesPlay(plays ...*models.DominoPlayWithPass) *models.Dom
 		delete(playDrawTable, k)
 	}
 
-	playWinningTableLen, playDrawTableLen := len(playWinningTable), len(playDrawTable)
+	playWinningTableLen, playDrawTableLen :=
+		len(playWinningTable), len(playDrawTable)
 	if playWinningTableLen == 0 && playDrawTableLen == 0 {
 		return nil
 	}
@@ -221,7 +230,10 @@ func maximizeWinningChancesPlay(plays ...*models.DominoPlayWithPass) *models.Dom
 	return betterPlayFromPlayDepth(plays, playWinningTable)
 }
 
-func betterPlayFromPlayDepth(plays []*models.DominoPlayWithPass, playDepthTable map[*models.DominoPlayWithPass][]int) *models.DominoPlayWithPass {
+func betterPlayFromPlayDepth(
+	plays []*models.DominoPlayWithPass,
+	playDepthTable map[*models.DominoPlayWithPass][]int,
+) *models.DominoPlayWithPass {
 	if len(playDepthTable) == 0 {
 		return nil
 	}
@@ -246,7 +258,10 @@ func betterPlayFromPlayDepth(plays []*models.DominoPlayWithPass, playDepthTable 
 	return betterPlay
 }
 
-func generateTreeByPlay(state *models.DominoGameState, play *models.DominoPlayWithPass) {
+func generateTreeByPlay(
+	state *models.DominoGameState,
+	play *models.DominoPlayWithPass,
+) {
 	table := make([]models.Domino, len(state.Table)+1)
 
 	index := 0
@@ -268,11 +283,17 @@ func generateTreeByPlay(state *models.DominoGameState, play *models.DominoPlayWi
 	tableMap := make(models.TableMap, models.DominoUniqueBones)
 	for _, v := range table {
 		if _, ok := tableMap[v.X]; !ok {
-			tableMap[v.X] = make(models.TableBone, models.DominoUniqueBones)
+			tableMap[v.X] = make(
+				models.TableBone,
+				models.DominoUniqueBones,
+			)
 		}
 
 		if _, ok := tableMap[v.Y]; !ok {
-			tableMap[v.Y] = make(models.TableBone, models.DominoUniqueBones)
+			tableMap[v.Y] = make(
+				models.TableBone,
+				models.DominoUniqueBones,
+			)
 		}
 
 		tableMap[v.X][v.Y] = true
@@ -323,7 +344,10 @@ func generateTree(state *models.DominoGameState, generate guessTreeGenerate) {
 	unavailableBonesMutex.Lock()
 	{
 		defer unavailableBonesMutex.Unlock()
-		if models.DominoLength-len(state.Table)+len(state.Hand)+len(unavailableBones[nextPlayer]) < startGeneratingTreeDelta {
+
+		delta := models.DominoLength - len(state.Table) +
+			len(state.Hand) + len(unavailableBones[nextPlayer])
+		if delta < startGeneratingTreeDelta {
 			return
 		}
 
@@ -334,7 +358,10 @@ func generateTree(state *models.DominoGameState, generate guessTreeGenerate) {
 				}
 
 				if _, ok := unavailableBonesCopy[player]; !ok {
-					unavailableBonesCopy[player] = make(models.TableBone, models.DominoUniqueBones)
+					unavailableBonesCopy[player] = make(
+						models.TableBone,
+						models.DominoUniqueBones,
+					)
 				}
 
 				unavailableBonesCopy[player][boneSide] = true
@@ -394,8 +421,9 @@ func generateTreePlays(init *guessTreeGenerateStack) *guessTree {
 					Parent: top.node,
 					Depth:  top.node.Depth + 1,
 				},
-				Draw:   false,
-				Winner: top.node.Player == player || top.node.Player == getDuo(),
+				Draw: false,
+				Winner: top.node.Player == player ||
+					top.node.Player == getDuo(),
 			})
 
 			continue
@@ -416,7 +444,11 @@ func generateTreePlays(init *guessTreeGenerateStack) *guessTree {
 			}
 
 			if len(hand) > 0 {
-				childNodes := top.generate.GeneratePlays(currentPlayer, hand, top.node)
+				childNodes := top.generate.GeneratePlays(
+					currentPlayer,
+					hand,
+					top.node,
+				)
 				stack.PushBackList(generateStackList(
 					top,
 					childNodes,
@@ -426,7 +458,11 @@ func generateTreePlays(init *guessTreeGenerateStack) *guessTree {
 			}
 		}
 
-		dominoes := restingDominoes(top.generate, currentPlayer, top.unavailableBones)
+		dominoes := restingDominoes(
+			top.generate,
+			currentPlayer,
+			top.unavailableBones,
+		)
 
 		playerPlaysLen := 0
 		for _, p := range top.generate.Plays {
@@ -456,7 +492,11 @@ func generateTreePlays(init *guessTreeGenerateStack) *guessTree {
 				possibleHand = append(possibleHand, dominoes[idx])
 			}
 
-			childNodes := top.generate.GeneratePlays(currentPlayer, possibleHand, top.node)
+			childNodes := top.generate.GeneratePlays(
+				currentPlayer,
+				possibleHand,
+				top.node,
+			)
 
 			if childNodes.Len() > 0 {
 				stack.PushBackList(generateStackList(
@@ -483,9 +523,15 @@ func generateTreePlays(init *guessTreeGenerateStack) *guessTree {
 				Player:   currentPlayer,
 			}
 
-			unavailableBones := make(models.UnavailableBonesPlayer, models.DominoMaxPlayer)
+			unavailableBones := make(
+				models.UnavailableBonesPlayer,
+				models.DominoMaxPlayer,
+			)
 			if _, ok := unavailableBones[currentPlayer]; !ok {
-				unavailableBones[currentPlayer] = make(models.TableBone, models.DominoUniqueBones)
+				unavailableBones[currentPlayer] = make(
+					models.TableBone,
+					models.DominoUniqueBones,
+				)
 			}
 			for k, v := range top.unavailableBones[currentPlayer] {
 				if !v {
@@ -540,7 +586,11 @@ func generateStackList(
 
 		top.node.Children.PushBack(&childNode.guessTreeNode)
 
-		possiblePlays := make([]models.DominoPlay, 0, len(top.generate.Plays)+1)
+		possiblePlays := make(
+			[]models.DominoPlay,
+			0,
+			len(top.generate.Plays)+1,
+		)
 		possiblePlays = append(possiblePlays, top.generate.Plays...)
 		possiblePlays = append(possiblePlays, models.DominoPlay{
 			PlayerPosition: currentPlayer,
@@ -550,11 +600,17 @@ func generateStackList(
 		possibleTableMap := make(models.TableMap, models.DominoUniqueBones)
 		for _, play := range possiblePlays {
 			if _, ok := possibleTableMap[play.Bone.X]; !ok {
-				possibleTableMap[play.Bone.X] = make(models.TableBone, models.DominoUniqueBones)
+				possibleTableMap[play.Bone.X] = make(
+					models.TableBone,
+					models.DominoUniqueBones,
+				)
 			}
 
 			if _, ok := possibleTableMap[play.Bone.Y]; !ok {
-				possibleTableMap[play.Bone.Y] = make(models.TableBone, models.DominoUniqueBones)
+				possibleTableMap[play.Bone.Y] = make(
+					models.TableBone,
+					models.DominoUniqueBones,
+				)
 			}
 
 			possibleTableMap[play.Bone.X][play.Bone.Y] = true
@@ -580,7 +636,11 @@ func generateStackList(
 	return result
 }
 
-func leafPushBack(top *guessTreeGenerateStack, leafs *list.List, leaf *guessTreeLeaf) {
+func leafPushBack(
+	top *guessTreeGenerateStack,
+	leafs *list.List,
+	leaf *guessTreeLeaf,
+) {
 	parent := top.node.Parent
 
 	for current := top.node.Children.Front(); current != nil; current = current.Next() {
@@ -649,7 +709,11 @@ func leafFromPasses(top *guessTreeGenerateStack) *guessTreeLeaf {
 	}
 }
 
-func restingDominoes(generate guessTreeGenerate, player models.PlayerPosition, ub models.UnavailableBonesPlayer) []models.Domino {
+func restingDominoes(
+	generate guessTreeGenerate,
+	player models.PlayerPosition,
+	ub models.UnavailableBonesPlayer,
+) []models.Domino {
 	cannotPlayMap := make(models.TableMap, models.DominoUniqueBones)
 
 	const maxBone = models.DominoMaxBone

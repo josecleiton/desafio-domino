@@ -45,7 +45,9 @@ func commonMaximizedPlay(bones []models.DominoInTable) models.DominoPlayWithPass
 	return playFromDominoInTable(bones[0])
 }
 
-func maximizedPlays(playsRespectingDuo []models.DominoPlayWithPass) *models.DominoPlayWithPass {
+func maximizedPlays(
+	playsRespectingDuo []models.DominoPlayWithPass,
+) *models.DominoPlayWithPass {
 	max := playsRespectingDuo[0]
 	for _, play := range playsRespectingDuo[1:] {
 		if play.Bone.Sum() > max.Bone.Sum() {
@@ -56,7 +58,10 @@ func maximizedPlays(playsRespectingDuo []models.DominoPlayWithPass) *models.Domi
 	return &max
 }
 
-func countPlay(state *models.DominoGameState, left, right []models.DominoInTable) *models.DominoPlayWithPass {
+func countPlay(
+	state *models.DominoGameState,
+	left, right []models.DominoInTable,
+) *models.DominoPlayWithPass {
 	if ep, ok := state.Edges[models.LeftEdge]; ok && ep != nil {
 		leftBonesInGame := countBones(state, models.DominoInTable{
 			Edge: models.LeftEdge,
@@ -88,10 +93,13 @@ func countPlay(state *models.DominoGameState, left, right []models.DominoInTable
 	return nil
 }
 
-func duoPlay(state *models.DominoGameState, left, right []models.DominoInTable) *models.DominoPlayWithPass {
-
+func duoPlay(
+	state *models.DominoGameState,
+	left, right []models.DominoInTable,
+) *models.DominoPlayWithPass {
 	filteredLeft, filteredRight := duoCanPlayWithBoneGlue(left, right)
-	cantPlayLeft, cantPlayRight := len(filteredLeft) == 0, len(filteredRight) == 0
+	cantPlayLeft, cantPlayRight := len(filteredLeft) == 0,
+		len(filteredRight) == 0
 	playsRespectingDuo := make([]models.DominoPlayWithPass, 0, 2)
 
 	// duo cant play with bone glue
@@ -99,21 +107,33 @@ func duoPlay(state *models.DominoGameState, left, right []models.DominoInTable) 
 		leftEdge, rightEdge := duoCanPlayEdges(state)
 
 		if leftEdge {
-			playsRespectingDuo = append(playsRespectingDuo, playFromDominoInTable(right[0]))
+			playsRespectingDuo = append(
+				playsRespectingDuo,
+				playFromDominoInTable(right[0]),
+			)
 		}
 
 		if rightEdge {
-			playsRespectingDuo = append(playsRespectingDuo, playFromDominoInTable(left[0]))
+			playsRespectingDuo = append(
+				playsRespectingDuo,
+				playFromDominoInTable(left[0]),
+			)
 		}
 
 	}
 
 	if cantPlayLeft {
-		playsRespectingDuo = append(playsRespectingDuo, playFromDominoInTable(filteredRight[0]))
+		playsRespectingDuo = append(
+			playsRespectingDuo,
+			playFromDominoInTable(filteredRight[0]),
+		)
 	}
 
 	if cantPlayRight {
-		playsRespectingDuo = append(playsRespectingDuo, playFromDominoInTable(filteredLeft[0]))
+		playsRespectingDuo = append(
+			playsRespectingDuo,
+			playFromDominoInTable(filteredLeft[0]),
+		)
 	}
 
 	if len(playsRespectingDuo) == 0 {
@@ -124,7 +144,10 @@ func duoPlay(state *models.DominoGameState, left, right []models.DominoInTable) 
 
 }
 
-func passedPlay(state *models.DominoGameState, left, right []models.DominoInTable) *models.DominoPlayWithPass {
+func passedPlay(
+	state *models.DominoGameState,
+	left, right []models.DominoInTable,
+) *models.DominoPlayWithPass {
 	leftCount, rightCount := append([]models.DominoInTable{}, left...),
 		append([]models.DominoInTable{}, right...)
 

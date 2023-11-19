@@ -42,7 +42,11 @@ func (play DominoPlayWithPass) Pass() bool {
 }
 
 func (play DominoPlayWithPass) String() string {
-	return fmt.Sprintf("{Player: %d, Bone: %v}", play.PlayerPosition, play.Bone)
+	return fmt.Sprintf(
+		"{Player: %d, Bone: %v}",
+		play.PlayerPosition,
+		play.Bone,
+	)
 }
 
 func (d DominoInTable) GlueableSide() int {

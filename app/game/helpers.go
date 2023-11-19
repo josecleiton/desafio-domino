@@ -6,12 +6,15 @@ func getDuo() models.PlayerPosition {
 	return player.Add(2)
 }
 
-func handCanPlayThisTurn(state *models.DominoGameState) ([]models.DominoInTable, []models.DominoInTable) {
+func handCanPlayThisTurn(
+	state *models.DominoGameState,
+) ([]models.DominoInTable, []models.DominoInTable) {
 	bonesGlueLeft := make([]models.DominoInTable, 0, len(hand))
 	bonesGlueRight := make([]models.DominoInTable, 0, len(hand))
 
 	for _, bh := range hand {
-		left, right := dominoInTableFromEdge(state, models.LeftEdge), dominoInTableFromEdge(state, models.RightEdge)
+		left, right := dominoInTableFromEdge(state, models.LeftEdge),
+			dominoInTableFromEdge(state, models.RightEdge)
 		if bone := left.Glue(bh); bone != nil {
 			bonesGlueLeft = append(bonesGlueLeft, models.DominoInTable{
 				Domino: *bone,
@@ -30,7 +33,9 @@ func handCanPlayThisTurn(state *models.DominoGameState) ([]models.DominoInTable,
 	return bonesGlueLeft, bonesGlueRight
 }
 
-func duoCanPlayWithBoneGlue(left, right []models.DominoInTable) ([]models.DominoInTable, []models.DominoInTable) {
+func duoCanPlayWithBoneGlue(
+	left, right []models.DominoInTable,
+) ([]models.DominoInTable, []models.DominoInTable) {
 	duo := getDuo()
 
 	duoLeft := make([]models.DominoInTable, 0, len(left))
@@ -38,6 +43,7 @@ func duoCanPlayWithBoneGlue(left, right []models.DominoInTable) ([]models.Domino
 
 	unavailableBonesMutex.Lock()
 	defer unavailableBonesMutex.Unlock()
+
 	for _, bone := range left {
 		if v, ok := unavailableBones[duo][bone.GlueableSide()]; ok && v {
 			continue
@@ -57,7 +63,10 @@ func duoCanPlayWithBoneGlue(left, right []models.DominoInTable) ([]models.Domino
 	return duoLeft, duoRight
 }
 
-func duoCanPlayEdge(state *models.DominoGameState, edge models.DominoInTable) bool {
+func duoCanPlayEdge(
+	state *models.DominoGameState,
+	edge models.DominoInTable,
+) bool {
 	duo := getDuo()
 	if v, ok := unavailableBones[duo][edge.GlueableSide()]; ok && v {
 		return false
@@ -84,7 +93,8 @@ func countPasses(bone models.DominoInTable) int {
 			continue
 		}
 
-		if v, ok := unavailableBones[currentPlayer][bone.GlueableSide()]; ok && v {
+		ub := unavailableBones[currentPlayer]
+		if v, ok := ub[bone.GlueableSide()]; ok && v {
 			passes++
 		}
 	}

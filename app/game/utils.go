@@ -18,7 +18,10 @@ func playFromDominoInTable(bone models.DominoInTable) models.DominoPlayWithPass 
 	}
 }
 
-func dominoInTableFromEdge(state *models.DominoGameState, edge models.Edge) models.DominoInTable {
+func dominoInTableFromEdge(
+	state *models.DominoGameState,
+	edge models.Edge,
+) models.DominoInTable {
 	bone := state.Edges[edge]
 	return models.DominoInTable{
 		Edge: edge,
@@ -29,7 +32,10 @@ func dominoInTableFromEdge(state *models.DominoGameState, edge models.Edge) mode
 	}
 }
 
-func dominoInTableFromDomino(domino models.Domino, edge models.Edge) models.DominoInTable {
+func dominoInTableFromDomino(
+	domino models.Domino,
+	edge models.Edge,
+) models.DominoInTable {
 	return models.DominoInTable{
 		Edge: edge,
 		Domino: models.Domino{
