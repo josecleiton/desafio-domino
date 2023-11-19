@@ -2,6 +2,7 @@ package game
 
 import (
 	"container/list"
+	"fmt"
 	"log"
 	"math/rand"
 	"reflect"
@@ -370,7 +371,7 @@ func generateTree(state *models.DominoGameState, generate guessTreeGenerate) {
 	}
 
 	table := make([]models.Domino, len(state.Table))
-	table = append(table, state.Table...)
+	copy(table, state.Table)
 
 	go func() {
 		defer treeGeneratingWg.Done()
@@ -408,6 +409,7 @@ func generateTreePlays(init *guessTreeGenerateStack) *guessTree {
 	leafs := list.New()
 
 	for stack.Len() > 0 {
+		fmt.Println(stack.Len())
 		element := stack.Back()
 		top := element.Value.(*guessTreeGenerateStack)
 		stack.Remove(element)
