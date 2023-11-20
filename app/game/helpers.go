@@ -9,10 +9,10 @@ func getDuo() models.PlayerPosition {
 func handCanPlayThisTurn(
 	state *models.DominoGameState,
 ) ([]models.DominoInTable, []models.DominoInTable) {
-	bonesGlueLeft := make([]models.DominoInTable, 0, len(hand))
-	bonesGlueRight := make([]models.DominoInTable, 0, len(hand))
+	bonesGlueLeft := make([]models.DominoInTable, 0, len(playerHand))
+	bonesGlueRight := make([]models.DominoInTable, 0, len(playerHand))
 
-	for _, bh := range hand {
+	for _, bh := range playerHand {
 		left, right := dominoInTableFromEdge(state, models.LeftEdge),
 			dominoInTableFromEdge(state, models.RightEdge)
 		if bone := left.Glue(bh); bone != nil {
