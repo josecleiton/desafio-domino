@@ -168,8 +168,8 @@ func initialPlay(state *models.DominoGameState) models.DominoPlayWithPass {
 		Bone: &models.DominoInTable{
 			Edge: models.LeftEdge,
 			Domino: models.Domino{
-				X: g.Hand[0].X,
-				Y: g.Hand[0].Y,
+				L: g.Hand[0].L,
+				R: g.Hand[0].R,
 			},
 		},
 	}
@@ -183,11 +183,11 @@ func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 	if leftLen == 0 && rightLen == 0 {
 		edges := state.Edges()
 		if ep, ok := edges[models.LeftEdge]; ok && ep != nil {
-			g.UnavailableBones[g.Player][ep.Y] = true
+			g.UnavailableBones[g.Player][ep.R] = true
 		}
 
 		if ep, ok := edges[models.RightEdge]; ok && ep != nil {
-			g.UnavailableBones[g.Player][ep.Y] = true
+			g.UnavailableBones[g.Player][ep.R] = true
 		}
 
 		allPlays := make([]models.DominoPlay, 0, len(state.Plays))

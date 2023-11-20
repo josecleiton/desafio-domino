@@ -138,15 +138,15 @@ func gameRequestToDomain(request *gameStateRequest) (*models.DominoGameState, er
 			return nil, err
 		}
 
-		if _, ok := tableMap[domino.X]; !ok {
-			tableMap[domino.X] = make(models.TableBone, models.DominoUniqueBones)
+		if _, ok := tableMap[domino.L]; !ok {
+			tableMap[domino.L] = make(models.TableBone, models.DominoUniqueBones)
 		}
-		if _, ok := tableMap[domino.Y]; !ok {
-			tableMap[domino.Y] = make(models.TableBone, models.DominoUniqueBones)
+		if _, ok := tableMap[domino.R]; !ok {
+			tableMap[domino.R] = make(models.TableBone, models.DominoUniqueBones)
 		}
 
-		tableMap[domino.X][domino.Y] = true
-		tableMap[domino.Y][domino.X] = true
+		tableMap[domino.L][domino.R] = true
+		tableMap[domino.R][domino.L] = true
 
 		edge := models.LeftEdge
 		if play.Direction != nil && *play.Direction == Right {
@@ -208,7 +208,7 @@ func dominoPlayToResponse(state *models.DominoGameState, dominoPlay models.Domin
 	}
 
 	domino := dominoPlay.Bone.Domino
-	bone := fmt.Sprintf("%d-%d", domino.X, domino.Y)
+	bone := fmt.Sprintf("%d-%d", domino.L, domino.R)
 	return &playStateResponse{
 		Player:    dominoPlay.PlayerPosition,
 		Bone:      &bone,

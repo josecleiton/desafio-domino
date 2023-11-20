@@ -26,8 +26,8 @@ func dominoInTableFromEdge(
 	return models.DominoInTable{
 		Edge: edge,
 		Domino: models.Domino{
-			X: bone.X,
-			Y: bone.Y,
+			L: bone.L,
+			R: bone.R,
 		},
 	}
 }
@@ -39,8 +39,8 @@ func dominoInTableFromDomino(
 	return models.DominoInTable{
 		Edge: edge,
 		Domino: models.Domino{
-			X: domino.X,
-			Y: domino.Y,
+			L: domino.L,
+			R: domino.R,
 		},
 	}
 }
@@ -56,16 +56,16 @@ func sortByPassed(bones []models.DominoInTable) {
 func tableMapFromDominoes(dominoes []models.Domino) models.TableMap {
 	table := make(models.TableMap, models.DominoUniqueBones)
 	for _, domino := range dominoes {
-		if _, ok := table[domino.X]; !ok {
-			table[domino.X] = make(models.TableBone, models.DominoUniqueBones)
+		if _, ok := table[domino.L]; !ok {
+			table[domino.L] = make(models.TableBone, models.DominoUniqueBones)
 		}
 
-		if _, ok := table[domino.Y]; !ok {
-			table[domino.Y] = make(models.TableBone, models.DominoUniqueBones)
+		if _, ok := table[domino.R]; !ok {
+			table[domino.R] = make(models.TableBone, models.DominoUniqueBones)
 		}
 
-		table[domino.X][domino.Y] = true
-		table[domino.Y][domino.X] = true
+		table[domino.L][domino.R] = true
+		table[domino.R][domino.L] = true
 	}
 
 	return table

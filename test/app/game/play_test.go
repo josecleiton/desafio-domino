@@ -13,13 +13,13 @@ func firstPlay() models.DominoGameState {
 	return models.DominoGameState{
 		PlayerPosition: 1,
 		Hand: []models.Domino{
-			{X: 0, Y: 0},
-			{X: 0, Y: 3},
-			{X: 1, Y: 2},
-			{X: 1, Y: 3},
-			{X: 1, Y: 6},
-			{X: 3, Y: 6},
-			{X: 5, Y: 5},
+			{L: 0, R: 0},
+			{L: 0, R: 3},
+			{L: 1, R: 2},
+			{L: 1, R: 3},
+			{L: 1, R: 6},
+			{L: 3, R: 6},
+			{L: 5, R: 5},
 		},
 		TableMap: models.TableMap{},
 		Table:    []models.Domino{},
@@ -41,8 +41,8 @@ func secondPlay(stGameState *models.DominoGameState, stPlay *models.DominoPlayWi
 			Bone: models.DominoInTable{
 				Edge: models.LeftEdge,
 				Domino: models.Domino{
-					X: 4,
-					Y: 5,
+					L: 4,
+					R: 5,
 				},
 			},
 		},
@@ -51,8 +51,8 @@ func secondPlay(stGameState *models.DominoGameState, stPlay *models.DominoPlayWi
 			Bone: models.DominoInTable{
 				Edge: models.RightEdge,
 				Domino: models.Domino{
-					X: 5,
-					Y: 3,
+					L: 5,
+					R: 3,
 				},
 			},
 		},
@@ -66,16 +66,16 @@ func secondPlay(stGameState *models.DominoGameState, stPlay *models.DominoPlayWi
 
 	tableMap := make(models.TableMap, len(plays))
 	for _, play := range plays {
-		if _, ok := tableMap[play.Bone.X]; !ok {
-			tableMap[play.Bone.X] = make(models.TableBone, len(plays))
+		if _, ok := tableMap[play.Bone.L]; !ok {
+			tableMap[play.Bone.L] = make(models.TableBone, len(plays))
 		}
 
-		if _, ok := tableMap[play.Bone.Y]; !ok {
-			tableMap[play.Bone.Y] = make(models.TableBone, len(plays))
+		if _, ok := tableMap[play.Bone.R]; !ok {
+			tableMap[play.Bone.R] = make(models.TableBone, len(plays))
 		}
 
-		tableMap[play.Bone.X][play.Bone.Y] = true
-		tableMap[play.Bone.Y][play.Bone.X] = true
+		tableMap[play.Bone.L][play.Bone.R] = true
+		tableMap[play.Bone.R][play.Bone.L] = true
 	}
 
 	newHand := make([]models.Domino, 0, len(stGameState.Hand)-1)
@@ -148,88 +148,88 @@ func TestPlayGlue(t *testing.T) {
 
 func TestPassedPlay(t *testing.T) {
 	tableSt := []models.Domino{
-		{X: 0, Y: 2},
-		{X: 2, Y: 5},
-		{X: 5, Y: 5},
-		{X: 5, Y: 6},
-		{X: 6, Y: 6},
-		{X: 6, Y: 0},
-		{X: 0, Y: 3},
-		{X: 3, Y: 3},
-		{X: 3, Y: 6},
+		{L: 0, R: 2},
+		{L: 2, R: 5},
+		{L: 5, R: 5},
+		{L: 5, R: 6},
+		{L: 6, R: 6},
+		{L: 6, R: 0},
+		{L: 0, R: 3},
+		{L: 3, R: 3},
+		{L: 3, R: 6},
 	}
 	tableMapSt := tableMapFromTable(tableSt)
 	gameStateSt := &models.DominoGameState{
 		PlayerPosition: 2,
 		Hand: []models.Domino{
-			{X: 6, Y: 1},
-			{X: 5, Y: 3},
-			{X: 1, Y: 0},
-			{X: 0, Y: 0},
-			{X: 4, Y: 3},
+			{L: 6, R: 1},
+			{L: 5, R: 3},
+			{L: 1, R: 0},
+			{L: 0, R: 0},
+			{L: 4, R: 3},
 		},
 		Plays: []models.DominoPlay{
 			{
 				PlayerPosition: 1,
 				Bone: models.DominoInTable{
 					Edge:   models.LeftEdge,
-					Domino: models.Domino{X: 6, Y: 6},
+					Domino: models.Domino{L: 6, R: 6},
 				},
 			},
 			{
 				PlayerPosition: 2,
 				Bone: models.DominoInTable{
 					Edge:   models.LeftEdge,
-					Domino: models.Domino{X: 5, Y: 6},
+					Domino: models.Domino{L: 5, R: 6},
 				},
 			},
 			{
 				PlayerPosition: 3,
 				Bone: models.DominoInTable{
 					Edge:   models.RightEdge,
-					Domino: models.Domino{X: 6, Y: 0},
+					Domino: models.Domino{L: 6, R: 0},
 				},
 			},
 			{
 				PlayerPosition: 4,
 				Bone: models.DominoInTable{
 					Edge:   models.LeftEdge,
-					Domino: models.Domino{X: 5, Y: 5},
+					Domino: models.Domino{L: 5, R: 5},
 				},
 			},
 			{
 				PlayerPosition: 1,
 				Bone: models.DominoInTable{
 					Edge:   models.LeftEdge,
-					Domino: models.Domino{X: 2, Y: 5},
+					Domino: models.Domino{L: 2, R: 5},
 				},
 			},
 			{
 				PlayerPosition: 2,
 				Bone: models.DominoInTable{
 					Edge:   models.RightEdge,
-					Domino: models.Domino{X: 0, Y: 3},
+					Domino: models.Domino{L: 0, R: 3},
 				},
 			},
 			{
 				PlayerPosition: 3,
 				Bone: models.DominoInTable{
 					Edge:   models.LeftEdge,
-					Domino: models.Domino{X: 0, Y: 2},
+					Domino: models.Domino{L: 0, R: 2},
 				},
 			},
 			{
 				PlayerPosition: 4,
 				Bone: models.DominoInTable{
 					Edge:   models.RightEdge,
-					Domino: models.Domino{X: 3, Y: 3},
+					Domino: models.Domino{L: 3, R: 3},
 				},
 			},
 			{
 				PlayerPosition: 1,
 				Bone: models.DominoInTable{
 					Edge:   models.RightEdge,
-					Domino: models.Domino{X: 3, Y: 6},
+					Domino: models.Domino{L: 3, R: 6},
 				},
 			},
 		},
@@ -245,112 +245,112 @@ func TestPassedPlay(t *testing.T) {
 	fmt.Println("play:", play)
 
 	tableNd := []models.Domino{
-		{X: 5, Y: 0},
-		{X: 0, Y: 2},
-		{X: 2, Y: 5},
-		{X: 5, Y: 5},
-		{X: 5, Y: 6},
-		{X: 6, Y: 6},
-		{X: 6, Y: 0},
-		{X: 0, Y: 3},
-		{X: 3, Y: 3},
-		{X: 3, Y: 6},
-		{X: 6, Y: 1},
-		{X: 1, Y: 3},
+		{L: 5, R: 0},
+		{L: 0, R: 2},
+		{L: 2, R: 5},
+		{L: 5, R: 5},
+		{L: 5, R: 6},
+		{L: 6, R: 6},
+		{L: 6, R: 0},
+		{L: 0, R: 3},
+		{L: 3, R: 3},
+		{L: 3, R: 6},
+		{L: 6, R: 1},
+		{L: 1, R: 3},
 	}
 	tableMapNd := tableMapFromTable(tableNd)
 
 	gameStateNd := &models.DominoGameState{
 		PlayerPosition: 2,
 		Hand: []models.Domino{
-			{X: 5, Y: 3},
-			{X: 1, Y: 0},
-			{X: 0, Y: 0},
-			{X: 4, Y: 3},
+			{L: 5, R: 3},
+			{L: 1, R: 0},
+			{L: 0, R: 0},
+			{L: 4, R: 3},
 		},
 		Plays: []models.DominoPlay{
 			{
 				PlayerPosition: 1,
 				Bone: models.DominoInTable{
 					Edge:   models.LeftEdge,
-					Domino: models.Domino{X: 6, Y: 6},
+					Domino: models.Domino{L: 6, R: 6},
 				},
 			},
 			{
 				PlayerPosition: 2,
 				Bone: models.DominoInTable{
 					Edge:   models.LeftEdge,
-					Domino: models.Domino{X: 5, Y: 6},
+					Domino: models.Domino{L: 5, R: 6},
 				},
 			},
 			{
 				PlayerPosition: 3,
 				Bone: models.DominoInTable{
 					Edge:   models.RightEdge,
-					Domino: models.Domino{X: 6, Y: 0},
+					Domino: models.Domino{L: 6, R: 0},
 				},
 			},
 			{
 				PlayerPosition: 4,
 				Bone: models.DominoInTable{
 					Edge:   models.LeftEdge,
-					Domino: models.Domino{X: 5, Y: 5},
+					Domino: models.Domino{L: 5, R: 5},
 				},
 			},
 			{
 				PlayerPosition: 1,
 				Bone: models.DominoInTable{
 					Edge:   models.LeftEdge,
-					Domino: models.Domino{X: 2, Y: 5},
+					Domino: models.Domino{L: 2, R: 5},
 				},
 			},
 			{
 				PlayerPosition: 2,
 				Bone: models.DominoInTable{
 					Edge:   models.RightEdge,
-					Domino: models.Domino{X: 0, Y: 3},
+					Domino: models.Domino{L: 0, R: 3},
 				},
 			},
 			{
 				PlayerPosition: 3,
 				Bone: models.DominoInTable{
 					Edge:   models.LeftEdge,
-					Domino: models.Domino{X: 0, Y: 2},
+					Domino: models.Domino{L: 0, R: 2},
 				},
 			},
 			{
 				PlayerPosition: 4,
 				Bone: models.DominoInTable{
 					Edge:   models.RightEdge,
-					Domino: models.Domino{X: 3, Y: 3},
+					Domino: models.Domino{L: 3, R: 3},
 				},
 			},
 			{
 				PlayerPosition: 1,
 				Bone: models.DominoInTable{
 					Edge:   models.RightEdge,
-					Domino: models.Domino{X: 3, Y: 6},
+					Domino: models.Domino{L: 3, R: 6},
 				},
 			},
 			{
 				PlayerPosition: 2,
 				Bone: models.DominoInTable{
 					Edge:   models.RightEdge,
-					Domino: models.Domino{X: 6, Y: 1},
+					Domino: models.Domino{L: 6, R: 1},
 				},
 			},
 			{
 				PlayerPosition: 3,
 				Bone: models.DominoInTable{
 					Edge:   models.RightEdge,
-					Domino: models.Domino{X: 1, Y: 3},
+					Domino: models.Domino{L: 1, R: 3},
 				},
 			},
 			{
 				PlayerPosition: 4,
 				Bone: models.DominoInTable{
 					Edge:   models.LeftEdge,
-					Domino: models.Domino{X: 5, Y: 0},
+					Domino: models.Domino{L: 5, R: 0},
 				},
 			},
 		},
@@ -362,7 +362,7 @@ func TestPassedPlay(t *testing.T) {
 
 	fmt.Println("play:", play)
 
-	if (play.Bone.Domino != models.Domino{X: 3, Y: 5}) {
+	if (play.Bone.Domino != models.Domino{L: 3, R: 5}) {
 		t.Fatal("Wrong play")
 	}
 }
@@ -373,84 +373,84 @@ func TestGenerateTree(t *testing.T) {
 			PlayerPosition: 1,
 			Bone: models.DominoInTable{
 				Edge:   models.LeftEdge,
-				Domino: models.Domino{X: 6, Y: 6},
+				Domino: models.Domino{L: 6, R: 6},
 			},
 		},
 		{
 			PlayerPosition: 2,
 			Bone: models.DominoInTable{
 				Edge:   models.LeftEdge,
-				Domino: models.Domino{X: 1, Y: 6},
+				Domino: models.Domino{L: 1, R: 6},
 			},
 		},
 		{
 			PlayerPosition: 3,
 			Bone: models.DominoInTable{
 				Edge:   models.LeftEdge,
-				Domino: models.Domino{X: 0, Y: 1},
+				Domino: models.Domino{L: 0, R: 1},
 			},
 		},
 		{
 			PlayerPosition: 4,
 			Bone: models.DominoInTable{
 				Edge:   models.RightEdge,
-				Domino: models.Domino{X: 6, Y: 2},
+				Domino: models.Domino{L: 6, R: 2},
 			},
 		},
 		{
 			PlayerPosition: 1,
 			Bone: models.DominoInTable{
 				Edge:   models.LeftEdge,
-				Domino: models.Domino{X: 0, Y: 0},
+				Domino: models.Domino{L: 0, R: 0},
 			},
 		},
 		{
 			PlayerPosition: 2,
 			Bone: models.DominoInTable{
 				Edge:   models.LeftEdge,
-				Domino: models.Domino{X: 3, Y: 0},
+				Domino: models.Domino{L: 3, R: 0},
 			},
 		},
 		{
 			PlayerPosition: 3,
 			Bone: models.DominoInTable{
 				Edge:   models.LeftEdge,
-				Domino: models.Domino{X: 5, Y: 3},
+				Domino: models.Domino{L: 5, R: 3},
 			},
 		},
 		{
 			PlayerPosition: 4,
 			Bone: models.DominoInTable{
 				Edge:   models.RightEdge,
-				Domino: models.Domino{X: 2, Y: 2},
+				Domino: models.Domino{L: 2, R: 2},
 			},
 		},
 		{
 			PlayerPosition: 1,
 			Bone: models.DominoInTable{
 				Edge:   models.LeftEdge,
-				Domino: models.Domino{X: 5, Y: 5},
+				Domino: models.Domino{L: 5, R: 5},
 			},
 		},
 		{
 			PlayerPosition: 2,
 			Bone: models.DominoInTable{
 				Edge:   models.RightEdge,
-				Domino: models.Domino{X: 2, Y: 1},
+				Domino: models.Domino{L: 2, R: 1},
 			},
 		},
 		{
 			PlayerPosition: 3,
 			Bone: models.DominoInTable{
 				Edge:   models.LeftEdge,
-				Domino: models.Domino{X: 0, Y: 5},
+				Domino: models.Domino{L: 0, R: 5},
 			},
 		},
 		{
 			PlayerPosition: 4,
 			Bone: models.DominoInTable{
 				Edge:   models.LeftEdge,
-				Domino: models.Domino{X: 6, Y: 0},
+				Domino: models.Domino{L: 6, R: 0},
 			},
 		},
 	}
@@ -474,10 +474,10 @@ func TestGenerateTree(t *testing.T) {
 	state := &models.DominoGameState{
 		PlayerPosition: 1,
 		Hand: []models.Domino{
-			{X: 6, Y: 5},
-			{X: 1, Y: 1},
-			{X: 3, Y: 1},
-			{X: 4, Y: 1},
+			{L: 6, R: 5},
+			{L: 1, R: 1},
+			{L: 3, R: 1},
+			{L: 4, R: 1},
 		},
 		Table:    table,
 		TableMap: tableMap,
@@ -493,16 +493,16 @@ func TestGenerateTree(t *testing.T) {
 func tableMapFromTable(table []models.Domino) models.TableMap {
 	tableMap := make(models.TableMap, len(table))
 	for _, v := range table {
-		if _, ok := tableMap[v.X]; !ok {
-			tableMap[v.X] = make(models.TableBone, len(table))
+		if _, ok := tableMap[v.L]; !ok {
+			tableMap[v.L] = make(models.TableBone, len(table))
 		}
 
-		if _, ok := tableMap[v.Y]; !ok {
-			tableMap[v.Y] = make(models.TableBone, len(table))
+		if _, ok := tableMap[v.R]; !ok {
+			tableMap[v.R] = make(models.TableBone, len(table))
 		}
 
-		tableMap[v.X][v.Y] = true
-		tableMap[v.Y][v.X] = true
+		tableMap[v.L][v.R] = true
+		tableMap[v.R][v.L] = true
 	}
 
 	return tableMap

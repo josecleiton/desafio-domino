@@ -9,7 +9,7 @@ const DominoMaxBone = 6
 const DominoMinBone = 0
 
 type Domino struct {
-	X, Y int
+	L, R int
 }
 
 type DominoInTable struct {
@@ -18,15 +18,28 @@ type DominoInTable struct {
 }
 
 func (d Domino) Sum() int {
-	return d.X + d.Y
+	return d.L + d.R
 }
 
 func (d Domino) IsDouble() bool {
-	return d.X == d.Y
+	return d.L == d.R
 }
 
 func (d Domino) Reversed() Domino {
-	return Domino{X: d.Y, Y: d.X}
+	return Domino{L: d.R, R: d.L}
+}
+
+func (d Domino) Equals(other Domino) bool {
+	if d.L^other.L == 0 && d.R^other.R == 0 {
+		return true
+	}
+
+	reversed := other.Reversed()
+	if d.L^reversed.L == 0 && d.R^reversed.R == 0 {
+		return true
+	}
+
+	return false
 }
 
 func DominoFromString(s string) (*Domino, error) {
@@ -42,7 +55,7 @@ func DominoFromString(s string) (*Domino, error) {
 	}
 
 	return &Domino{
-		X: x,
-		Y: y,
+		L: x,
+		R: y,
 	}, nil
 }

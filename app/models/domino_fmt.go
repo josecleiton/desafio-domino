@@ -9,7 +9,7 @@ const (
 )
 
 func (d Domino) String() string {
-	offset := d.X*DominoUniqueBones + d.Y
+	offset := d.L*DominoUniqueBones + d.R
 
 	base := int(dominoUnicodeHorizontal)
 	if d.IsDouble() {

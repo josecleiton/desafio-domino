@@ -66,8 +66,8 @@ func countPlay(
 		leftBonesInGame := countBones(state, models.DominoInTable{
 			Edge: models.LeftEdge,
 			Domino: models.Domino{
-				X: ep.Y,
-				Y: ep.X,
+				L: ep.R,
+				R: ep.L,
 			},
 		})
 		if len(left)+leftBonesInGame == models.DominoUniqueBones {
@@ -80,8 +80,8 @@ func countPlay(
 		rightBonesInGame := countBones(state, models.DominoInTable{
 			Edge: models.RightEdge,
 			Domino: models.Domino{
-				X: ep.X,
-				Y: ep.Y,
+				L: ep.L,
+				R: ep.R,
 			},
 		})
 		if len(right)+rightBonesInGame == models.DominoUniqueBones {

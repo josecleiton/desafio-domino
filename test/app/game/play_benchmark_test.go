@@ -25,8 +25,8 @@ func BenchmarkTestPlayGlue(b *testing.B) {
 			Bone: models.DominoInTable{
 				Edge: models.LeftEdge,
 				Domino: models.Domino{
-					X: 5,
-					Y: 4,
+					L: 5,
+					R: 4,
 				},
 			},
 		},
@@ -35,8 +35,8 @@ func BenchmarkTestPlayGlue(b *testing.B) {
 			Bone: models.DominoInTable{
 				Edge: models.RightEdge,
 				Domino: models.Domino{
-					X: 5,
-					Y: 3,
+					L: 5,
+					R: 3,
 				},
 			},
 		},
@@ -44,16 +44,16 @@ func BenchmarkTestPlayGlue(b *testing.B) {
 
 	table := make(models.TableMap, len(plays))
 	for _, play := range plays {
-		if _, ok := table[play.Bone.X]; !ok {
-			table[play.Bone.X] = make(models.TableBone, len(plays))
+		if _, ok := table[play.Bone.L]; !ok {
+			table[play.Bone.L] = make(models.TableBone, len(plays))
 		}
 
-		if _, ok := table[play.Bone.Y]; !ok {
-			table[play.Bone.Y] = make(models.TableBone, len(plays))
+		if _, ok := table[play.Bone.R]; !ok {
+			table[play.Bone.R] = make(models.TableBone, len(plays))
 		}
 
-		table[play.Bone.X][play.Bone.Y] = true
-		table[play.Bone.Y][play.Bone.X] = true
+		table[play.Bone.L][play.Bone.R] = true
+		table[play.Bone.R][play.Bone.L] = true
 	}
 
 	newHand := make([]models.Domino, 0, len(gameStateSt.Hand)-1)

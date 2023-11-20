@@ -60,10 +60,10 @@ func (play DominoPlayWithPass) String() string {
 
 func (d DominoInTable) GlueableSide() int {
 	if d.Edge == LeftEdge {
-		return d.X
+		return d.L
 	}
 
-	return d.Y
+	return d.R
 }
 
 func (d DominoInTable) Reversed() DominoInTable {
@@ -77,14 +77,14 @@ func (d DominoInTable) Glue(other Domino) *Domino {
 	side := d.GlueableSide()
 	reversed := other.Reversed()
 
-	if side == other.X {
+	if side == other.L {
 		if d.Edge == LeftEdge {
 			return &reversed
 		}
 		return &other
 	}
 
-	if side == other.Y {
+	if side == other.R {
 		if d.Edge == LeftEdge {
 			return &other
 		}
