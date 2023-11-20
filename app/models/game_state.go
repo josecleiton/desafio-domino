@@ -95,7 +95,7 @@ func (d DominoInTable) Glue(other Domino) *Domino {
 }
 
 func (p PlayerPosition) Add(count int) PlayerPosition {
-	return PlayerPosition((int(p)+count-1)%DominoMaxPlayer + 1)
+	return PlayerPosition((int(p)+DominoMaxPlayer-1+count)%DominoMaxPlayer + 1)
 }
 
 func (p PlayerPosition) Next() PlayerPosition {
@@ -108,10 +108,11 @@ func (p PlayerPosition) Prev() PlayerPosition {
 
 func (table UnavailableBonesPlayer) Copy() UnavailableBonesPlayer {
 	newTable := make(UnavailableBonesPlayer, DominoMaxPlayer)
+	for i := DominoMinPlayer; i <= DominoMaxPlayer; i++ {
+		newTable[PlayerPosition(i)] = make(TableBone, DominoUniqueBones)
+	}
+
 	for player, ub := range table {
-		if _, ok := newTable[player]; !ok {
-			newTable[player] = make(TableBone, DominoUniqueBones)
-		}
 
 		for k, v := range ub {
 			if !v {

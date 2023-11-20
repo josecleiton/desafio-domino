@@ -52,3 +52,21 @@ func sortByPassed(bones []models.DominoInTable) {
 		return countPasses(bones[i]) >= countPasses(bones[j])
 	})
 }
+
+func tableMapFromDominoes(dominoes []models.Domino) models.TableMap {
+	table := make(models.TableMap, models.DominoUniqueBones)
+	for _, domino := range dominoes {
+		if _, ok := table[domino.X]; !ok {
+			table[domino.X] = make(models.TableBone, models.DominoUniqueBones)
+		}
+
+		if _, ok := table[domino.Y]; !ok {
+			table[domino.Y] = make(models.TableBone, models.DominoUniqueBones)
+		}
+
+		table[domino.X][domino.Y] = true
+		table[domino.Y][domino.X] = true
+	}
+
+	return table
+}
