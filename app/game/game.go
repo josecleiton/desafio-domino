@@ -9,8 +9,7 @@ import (
 	"github.com/josecleiton/domino/app/models"
 )
 
-var hand []models.Domino
-var plays []models.DominoPlayWithPass
+var playerHand []models.Domino
 var states *ring.Ring
 var player models.PlayerPosition
 var unavailableBones models.UnavailableBonesPlayer
@@ -52,10 +51,10 @@ func Play(state *models.DominoGameState) models.DominoPlayWithPass {
 		states.Prev().Unlink(forLimit)
 	}
 
-	hand = make([]models.Domino, 0, len(state.Hand))
-	hand = append(hand, state.Hand...)
-	sort.Slice(hand, func(i, j int) bool {
-		return hand[i].Sum() >= hand[j].Sum()
+	playerHand = make([]models.Domino, 0, len(state.Hand))
+	playerHand = append(playerHand, state.Hand...)
+	sort.Slice(playerHand, func(i, j int) bool {
+		return playerHand[i].Sum() >= playerHand[j].Sum()
 	})
 
 	if len(state.Plays) > 0 {
@@ -65,25 +64,10 @@ func Play(state *models.DominoGameState) models.DominoPlayWithPass {
 			intermediateStates(state)
 		}()
 
-		plays = make([]models.DominoPlayWithPass, 0, models.DominoMaxEdges)
-
-		for _, play := range state.Plays {
-			if play.PlayerPosition != player {
-				continue
-			}
-			plays = append(plays, models.DominoPlayWithPass{
-				PlayerPosition: player,
-				Bone:           &play.Bone,
-			})
-
-		}
-
-		plays = append(plays, midgamePlay(state))
-	} else {
-		plays = append(plays, initialPlay(state))
+		return midgamePlay(state)
 	}
 
-	return plays[len(plays)-1]
+	return initialPlay(state)
 }
 
 func intermediateStates(state *models.DominoGameState) {
@@ -158,7 +142,6 @@ func intermediateStates(state *models.DominoGameState) {
 
 func initialize(state *models.DominoGameState) {
 	player = state.PlayerPosition
-	clear(plays)
 	clear(unavailableBones)
 	states = ring.New(1)
 	states.Value = state
@@ -170,8 +153,8 @@ func initialPlay(state *models.DominoGameState) models.DominoPlayWithPass {
 		Bone: &models.DominoInTable{
 			Edge: models.LeftEdge,
 			Domino: models.Domino{
-				X: hand[0].X,
-				Y: hand[0].Y,
+				X: playerHand[0].X,
+				Y: playerHand[0].Y,
 			},
 		},
 	}
@@ -197,7 +180,7 @@ func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 
 		generateTree(state, guessTreeGenerate{
 			Player: player,
-			Hand:   hand,
+			Hand:   playerHand,
 			Plays:  allPlays,
 		})
 
