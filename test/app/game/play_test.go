@@ -24,7 +24,6 @@ func firstPlay() models.DominoGameState {
 		TableMap: models.TableMap{},
 		Table:    []models.Domino{},
 		Plays:    []models.DominoPlay{},
-		Edges:    models.Edges{},
 	}
 }
 
@@ -86,14 +85,8 @@ func secondPlay(stGameState *models.DominoGameState, stPlay *models.DominoPlayWi
 		}
 	}
 
-	edges := models.Edges{
-		models.LeftEdge:  &plays[1].Bone.Domino,
-		models.RightEdge: &plays[2].Bone.Domino,
-	}
-
 	return models.DominoGameState{
 		PlayerPosition: stPlay.PlayerPosition,
-		Edges:          edges,
 		Hand:           newHand,
 		TableMap:       tableMap,
 		Plays:          plays,
@@ -133,7 +126,6 @@ func TestPlayGlue(t *testing.T) {
 
 	fmt.Println("hand:", ndGameState.Hand)
 	fmt.Println("table:", ndGameState.Table)
-	fmt.Println("edges:", ndGameState.Edges)
 	ndPlay := game.Play(&ndGameState)
 	if ndPlay.Pass() {
 		fmt.Println("Pass is not allowed")
@@ -175,16 +167,6 @@ func TestPassedPlay(t *testing.T) {
 			{X: 1, Y: 0},
 			{X: 0, Y: 0},
 			{X: 4, Y: 3},
-		},
-		Edges: models.Edges{
-			models.LeftEdge: &models.Domino{
-				X: 0,
-				Y: 2,
-			},
-			models.RightEdge: &models.Domino{
-				X: 3,
-				Y: 6,
-			},
 		},
 		Plays: []models.DominoPlay{
 			{
@@ -285,16 +267,6 @@ func TestPassedPlay(t *testing.T) {
 			{X: 1, Y: 0},
 			{X: 0, Y: 0},
 			{X: 4, Y: 3},
-		},
-		Edges: models.Edges{
-			models.LeftEdge: &models.Domino{
-				X: 5,
-				Y: 0,
-			},
-			models.RightEdge: &models.Domino{
-				X: 1,
-				Y: 3,
-			},
 		},
 		Plays: []models.DominoPlay{
 			{
@@ -509,11 +481,7 @@ func TestGenerateTree(t *testing.T) {
 		},
 		Table:    table,
 		TableMap: tableMap,
-		Edges: models.Edges{
-			models.LeftEdge:  &table[0],
-			models.RightEdge: &table[len(table)-1],
-		},
-		Plays: plays,
+		Plays:    plays,
 	}
 	play := game.Play(state)
 

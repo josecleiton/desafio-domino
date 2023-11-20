@@ -189,7 +189,6 @@ func gameRequestToDomain(request *gameStateRequest) (*models.DominoGameState, er
 		Hand:           hand,
 		TableMap:       tableMap,
 		Table:          table,
-		Edges:          edges,
 		Plays:          plays,
 	}, nil
 }

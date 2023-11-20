@@ -63,14 +63,8 @@ func BenchmarkTestPlayGlue(b *testing.B) {
 		}
 	}
 
-	edges := models.Edges{
-		models.LeftEdge:  &plays[1].Bone.Domino,
-		models.RightEdge: &plays[2].Bone.Domino,
-	}
-
 	gameStateNd := models.DominoGameState{
 		PlayerPosition: play.PlayerPosition,
-		Edges:          edges,
 		Hand:           newHand,
 		TableMap:       table,
 		Plays:          plays,

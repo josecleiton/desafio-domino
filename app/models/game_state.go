@@ -1,9 +1,12 @@
 package models
 
-import "fmt"
+import (
+	"fmt"
+)
 
 const DominoMaxPlayer = 4
 const DominoMinPlayer = 1
+const DominoMaxEdges = 2
 
 type Edge string
 type PlayerPosition int
@@ -33,8 +36,14 @@ type DominoGameState struct {
 	Hand           []Domino
 	Table          []Domino
 	TableMap       TableMap
-	Edges          Edges
 	Plays          []DominoPlay
+}
+
+func (s DominoGameState) Edges() Edges {
+	return Edges{
+		LeftEdge:  &s.Table[0],
+		RightEdge: &s.Table[len(s.Table)-1],
+	}
 }
 
 func (play DominoPlayWithPass) Pass() bool {
@@ -57,25 +66,61 @@ func (d DominoInTable) GlueableSide() int {
 	return d.Y
 }
 
+func (d DominoInTable) Reversed() DominoInTable {
+	return DominoInTable{
+		Edge:   d.Edge,
+		Domino: d.Domino.Reversed(),
+	}
+}
+
 func (d DominoInTable) Glue(other Domino) *Domino {
 	side := d.GlueableSide()
+	reversed := other.Reversed()
 
 	if side == other.X {
+		if d.Edge == LeftEdge {
+			return &reversed
+		}
 		return &other
 	}
 
 	if side == other.Y {
-		reversed := other.Reversed()
+		if d.Edge == LeftEdge {
+			return &other
+		}
 		return &reversed
 	}
 
 	return nil
 }
 
-func (p PlayerPosition) Next() PlayerPosition {
-	return PlayerPosition((int(p)-1)%DominoMaxPlayer + 1)
-}
-
 func (p PlayerPosition) Add(count int) PlayerPosition {
 	return PlayerPosition((int(p)+count-1)%DominoMaxPlayer + 1)
+}
+
+func (p PlayerPosition) Next() PlayerPosition {
+	return p.Add(1)
+}
+
+func (p PlayerPosition) Prev() PlayerPosition {
+	return p.Add(-1)
+}
+
+func (table UnavailableBonesPlayer) Copy() UnavailableBonesPlayer {
+	newTable := make(UnavailableBonesPlayer, DominoMaxPlayer)
+	for player, ub := range table {
+		if _, ok := newTable[player]; !ok {
+			newTable[player] = make(TableBone, DominoUniqueBones)
+		}
+
+		for k, v := range ub {
+			if !v {
+				continue
+			}
+
+			newTable[player][k] = true
+		}
+	}
+
+	return newTable
 }

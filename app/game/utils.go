@@ -22,7 +22,7 @@ func dominoInTableFromEdge(
 	state *models.DominoGameState,
 	edge models.Edge,
 ) models.DominoInTable {
-	bone := state.Edges[edge]
+	bone := state.Edges()[edge]
 	return models.DominoInTable{
 		Edge: edge,
 		Domino: models.Domino{

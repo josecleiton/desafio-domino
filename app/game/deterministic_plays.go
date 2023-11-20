@@ -62,7 +62,7 @@ func countPlay(
 	state *models.DominoGameState,
 	left, right []models.DominoInTable,
 ) *models.DominoPlayWithPass {
-	if ep, ok := state.Edges[models.LeftEdge]; ok && ep != nil {
+	if ep, ok := state.Edges()[models.LeftEdge]; ok && ep != nil {
 		leftBonesInGame := countBones(state, models.DominoInTable{
 			Edge: models.LeftEdge,
 			Domino: models.Domino{
@@ -76,7 +76,7 @@ func countPlay(
 		}
 	}
 
-	if ep, ok := state.Edges[models.RightEdge]; ok && ep != nil {
+	if ep, ok := state.Edges()[models.RightEdge]; ok && ep != nil {
 		rightBonesInGame := countBones(state, models.DominoInTable{
 			Edge: models.RightEdge,
 			Domino: models.Domino{

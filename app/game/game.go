@@ -65,7 +65,7 @@ func Play(state *models.DominoGameState) models.DominoPlayWithPass {
 			intermediateStates(state)
 		}()
 
-		plays = make([]models.DominoPlayWithPass, 0, len(state.Edges))
+		plays = make([]models.DominoPlayWithPass, 0, models.DominoMaxEdges)
 
 		for _, play := range state.Plays {
 			if play.PlayerPosition != player {
@@ -183,11 +183,12 @@ func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 
 	// pass
 	if leftLen == 0 && rightLen == 0 {
-		if ep, ok := state.Edges[models.LeftEdge]; ok && ep != nil {
+		edges := state.Edges()
+		if ep, ok := edges[models.LeftEdge]; ok && ep != nil {
 			unavailableBones[player][ep.Y] = true
 		}
 
-		if ep, ok := state.Edges[models.RightEdge]; ok && ep != nil {
+		if ep, ok := edges[models.RightEdge]; ok && ep != nil {
 			unavailableBones[player][ep.Y] = true
 		}
 
@@ -260,6 +261,7 @@ func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 		}
 
 		generateTreeByPlay(state, play)
+		treeGeneratingWg.Wait()
 
 		return *play
 	}
