@@ -18,7 +18,7 @@ func commonMaximizedPlay(bones []models.DominoInTable) models.DominoPlayWithPass
 
 	commonBones := make([]indexedCount, models.DominoUniqueBones)
 	for _, eb := range bones {
-		for _, hb := range playerHand {
+		for _, hb := range g.Hand {
 			if bone := eb.Glue(hb); bone != nil {
 				side := eb.GlueableSide()
 				commonBones[side].Count++

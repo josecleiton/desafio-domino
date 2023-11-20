@@ -13,7 +13,7 @@ type indexedCount struct {
 
 func playFromDominoInTable(bone models.DominoInTable) models.DominoPlayWithPass {
 	return models.DominoPlayWithPass{
-		PlayerPosition: player,
+		PlayerPosition: g.Player,
 		Bone:           &bone,
 	}
 }
@@ -46,8 +46,8 @@ func dominoInTableFromDomino(
 }
 
 func sortByPassed(bones []models.DominoInTable) {
-	unavailableBonesMutex.Lock()
-	defer unavailableBonesMutex.Unlock()
+	g.UnavailableBonesMutex.Lock()
+	defer g.UnavailableBonesMutex.Unlock()
 	sort.Slice(bones, func(i, j int) bool {
 		return countPasses(bones[i]) >= countPasses(bones[j])
 	})

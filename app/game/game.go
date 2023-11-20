@@ -9,27 +9,39 @@ import (
 	"github.com/josecleiton/domino/app/models"
 )
 
-var playerHand []models.Domino
-var states *ring.Ring
-var player models.PlayerPosition
-var unavailableBones models.UnavailableBonesPlayer
+type gameGlobals struct {
+	Hand             []models.Domino
+	States           *ring.Ring
+	Player           models.PlayerPosition
+	UnavailableBones models.UnavailableBonesPlayer
 
-var unavailableBonesMutex sync.Mutex
-var intermediateStateWg sync.WaitGroup
+	// sync
+	UnavailableBonesMutex sync.Mutex
+	IntermediateStateWg   sync.WaitGroup
+}
+
+var g *gameGlobals
 
 func init() {
-	unavailableBones = make(models.UnavailableBonesPlayer, models.DominoMaxPlayer)
+	g = &gameGlobals{
+		Hand: []models.Domino{},
+		UnavailableBones: make(
+			models.UnavailableBonesPlayer,
+			models.DominoMaxPlayer,
+		),
+	}
 }
 
 func Play(state *models.DominoGameState) models.DominoPlayWithPass {
 	hasToInitialize := false
-	if player != state.PlayerPosition {
+	if g.Player != state.PlayerPosition {
 		hasToInitialize = true
 	}
 
 	if !hasToInitialize {
-		if states.Len() > 0 {
-			if prevState := states.Prev(); prevState == nil || len(prevState.Value.(*models.DominoGameState).Plays) > len(state.Plays) {
+		if g.States.Len() > 0 {
+			if prevState := g.States.Prev(); prevState == nil ||
+				len(prevState.Value.(*models.DominoGameState).Plays) > len(state.Plays) {
 				hasToInitialize = true
 			}
 		} else {
@@ -43,24 +55,24 @@ func Play(state *models.DominoGameState) models.DominoPlayWithPass {
 		otherRing := ring.New(1)
 		otherRing.Value = state
 
-		states = states.Link(otherRing)
+		g.States = g.States.Link(otherRing)
 	}
 
-	forLimit := states.Len() - models.DominoMaxPlayer
+	forLimit := g.States.Len() - models.DominoMaxPlayer
 	if forLimit > 0 {
-		states.Prev().Unlink(forLimit)
+		g.States.Prev().Unlink(forLimit)
 	}
 
-	playerHand = make([]models.Domino, 0, len(state.Hand))
-	playerHand = append(playerHand, state.Hand...)
-	sort.Slice(playerHand, func(i, j int) bool {
-		return playerHand[i].Sum() >= playerHand[j].Sum()
+	g.Hand = make([]models.Domino, 0, len(state.Hand))
+	g.Hand = append(g.Hand, state.Hand...)
+	sort.Slice(g.Hand, func(i, j int) bool {
+		return g.Hand[i].Sum() >= g.Hand[j].Sum()
 	})
 
 	if len(state.Plays) > 0 {
-		intermediateStateWg.Add(1)
+		g.IntermediateStateWg.Add(1)
 		go func() {
-			defer intermediateStateWg.Done()
+			defer g.IntermediateStateWg.Done()
 			intermediateStates(state)
 		}()
 
@@ -71,8 +83,8 @@ func Play(state *models.DominoGameState) models.DominoPlayWithPass {
 }
 
 func intermediateStates(state *models.DominoGameState) {
-	current := states
-	statesLen := states.Len()
+	current := g.States
+	statesLen := g.States.Len()
 	for i := 0; current != nil && i < statesLen; i++ {
 		st := current.Value.(*models.DominoGameState)
 
@@ -112,8 +124,11 @@ func intermediateStates(state *models.DominoGameState) {
 
 			playerPassed := currentPlayer
 
-			if _, ok := unavailableBones[playerPassed]; !ok {
-				unavailableBones[playerPassed] = make(models.TableBone, models.DominoUniqueBones)
+			if _, ok := g.UnavailableBones[playerPassed]; !ok {
+				g.UnavailableBones[playerPassed] = make(
+					models.TableBone,
+					models.DominoUniqueBones,
+				)
 			}
 
 			currentPlayOnEdgeIdx := min(nonEvaluatedPlaysLen-1, i) + stPlayIdx + 1
@@ -128,23 +143,23 @@ func intermediateStates(state *models.DominoGameState) {
 				break
 			}
 
-			unavailableBones[playerPassed][currentPlayOnEdge.Bone.GlueableSide()] = true
-			unavailableBones[playerPassed][playOnReversedEdge.Bone.GlueableSide()] = true
+			g.UnavailableBones[playerPassed][currentPlayOnEdge.Bone.GlueableSide()] = true
+			g.UnavailableBones[playerPassed][playOnReversedEdge.Bone.GlueableSide()] = true
 		}
 
 		current = current.Next()
 	}
 
-	for states.Len() > 1 {
-		states.Prev().Unlink(1)
+	for g.States.Len() > 1 {
+		g.States.Prev().Unlink(1)
 	}
 }
 
 func initialize(state *models.DominoGameState) {
-	player = state.PlayerPosition
-	clear(unavailableBones)
-	states = ring.New(1)
-	states.Value = state
+	g.Player = state.PlayerPosition
+	clear(g.UnavailableBones)
+	g.States = ring.New(1)
+	g.States.Value = state
 }
 
 func initialPlay(state *models.DominoGameState) models.DominoPlayWithPass {
@@ -153,8 +168,8 @@ func initialPlay(state *models.DominoGameState) models.DominoPlayWithPass {
 		Bone: &models.DominoInTable{
 			Edge: models.LeftEdge,
 			Domino: models.Domino{
-				X: playerHand[0].X,
-				Y: playerHand[0].Y,
+				X: g.Hand[0].X,
+				Y: g.Hand[0].Y,
 			},
 		},
 	}
@@ -168,23 +183,23 @@ func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 	if leftLen == 0 && rightLen == 0 {
 		edges := state.Edges()
 		if ep, ok := edges[models.LeftEdge]; ok && ep != nil {
-			unavailableBones[player][ep.Y] = true
+			g.UnavailableBones[g.Player][ep.Y] = true
 		}
 
 		if ep, ok := edges[models.RightEdge]; ok && ep != nil {
-			unavailableBones[player][ep.Y] = true
+			g.UnavailableBones[g.Player][ep.Y] = true
 		}
 
 		allPlays := make([]models.DominoPlay, 0, len(state.Plays))
 		allPlays = append(allPlays, state.Plays...)
 
 		generateTree(state, guessTreeGenerate{
-			Player: player,
-			Hand:   playerHand,
+			Player: g.Player,
+			Hand:   g.Hand,
 			Plays:  allPlays,
 		})
 
-		return models.DominoPlayWithPass{PlayerPosition: player}
+		return models.DominoPlayWithPass{PlayerPosition: g.Player}
 	}
 
 	canPlayBoth := leftLen > 0 && rightLen > 0
@@ -208,14 +223,14 @@ func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 	go func() {
 		defer wg.Done()
 
-		intermediateStateWg.Wait()
+		g.IntermediateStateWg.Wait()
 		duoResult = duoPlay(state, left, right)
 	}()
 
 	go func() {
 		defer wg.Done()
 
-		intermediateStateWg.Wait()
+		g.IntermediateStateWg.Wait()
 
 		passedResult = passedPlay(state, left, right)
 	}()
@@ -261,13 +276,13 @@ func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 	}
 
 	log.Println("Something went wrong, no play found")
-	return models.DominoPlayWithPass{PlayerPosition: player}
+	return models.DominoPlayWithPass{PlayerPosition: g.Player}
 
 }
 
 func duoCanPlayEdges(state *models.DominoGameState) (bool, bool) {
-	unavailableBonesMutex.Lock()
-	defer unavailableBonesMutex.Unlock()
+	g.UnavailableBonesMutex.Lock()
+	defer g.UnavailableBonesMutex.Unlock()
 
 	leftEdge, rightEdge := dominoInTableFromEdge(state, models.LeftEdge),
 		dominoInTableFromEdge(state, models.RightEdge)
