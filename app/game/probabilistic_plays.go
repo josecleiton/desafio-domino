@@ -48,7 +48,7 @@ type guessTreeGenerateStack struct {
 	node             *guessTreeNode
 }
 
-const startGeneratingTreeDelta = 12
+const startGeneratingTreeDelta = 18
 const firstTreeDepth = 1
 
 var tree *guessTree
@@ -187,44 +187,46 @@ func maximizeWinningChancesPlay(
 	playWinningTable := make(map[*models.DominoPlayWithPass][]int, len(plays))
 	playDrawTable := make(map[*models.DominoPlayWithPass][]int, len(plays))
 
+	pathsByPlay := func(play *models.DominoPlayWithPass) {
+		defer treeTraversingWg.Done()
+		winningLeafDepths := playWinningTable[play]
+		drawLeafDepths := playDrawTable[play]
+
+		for current := tree.Leafs.Front(); current != nil; current = current.Next() {
+			leaf := current.Value.(*guessTreeLeaf)
+			deltaDepth := leaf.Depth - tree.Cursor.Depth
+
+			if leaf.Draw && leaf.Winner {
+				drawLeafDepths = append(
+					drawLeafDepths,
+					deltaDepth,
+				)
+				continue
+			}
+
+			if !leaf.Winner {
+				continue
+			}
+
+			winningLeafDepths = append(
+				winningLeafDepths,
+				deltaDepth,
+			)
+		}
+
+		sort.Slice(winningLeafDepths, func(i, j int) bool {
+			return winningLeafDepths[i] < winningLeafDepths[j]
+		})
+
+		sort.Slice(drawLeafDepths, func(i, j int) bool {
+			return drawLeafDepths[i] < drawLeafDepths[j]
+		})
+	}
+
 	for _, play := range plays {
 		playWinningTable[play] = []int{}
 		playDrawTable[play] = []int{}
-		go func(play *models.DominoPlayWithPass) {
-			defer treeTraversingWg.Done()
-			winningLeafDepths := playWinningTable[play]
-			drawLeafDepths := playDrawTable[play]
-
-			for current := tree.Leafs.Front(); current != nil; current = current.Next() {
-				leaf := current.Value.(*guessTreeLeaf)
-				deltaDepth := leaf.Depth - tree.Cursor.Depth
-
-				if leaf.Draw && leaf.Winner {
-					drawLeafDepths = append(
-						drawLeafDepths,
-						deltaDepth,
-					)
-					continue
-				}
-
-				if !leaf.Winner {
-					continue
-				}
-
-				winningLeafDepths = append(
-					winningLeafDepths,
-					deltaDepth,
-				)
-			}
-
-			sort.Slice(winningLeafDepths, func(i, j int) bool {
-				return winningLeafDepths[i] < winningLeafDepths[j]
-			})
-
-			sort.Slice(drawLeafDepths, func(i, j int) bool {
-				return drawLeafDepths[i] < drawLeafDepths[j]
-			})
-		}(play)
+		go pathsByPlay(play)
 	}
 
 	treeTraversingWg.Wait()
@@ -387,9 +389,9 @@ func generateTree(state *models.DominoGameState, generate guessTreeGenerate) {
 	{
 		defer g.UnavailableBonesMutex.Unlock()
 
-		delta := models.DominoLength - len(state.Table) +
+		delta := models.DominoLength - len(state.Plays) +
 			len(state.Hand) + len(g.UnavailableBones[state.PlayerPosition.Next()])
-		if delta < startGeneratingTreeDelta {
+		if delta > startGeneratingTreeDelta {
 			return
 		}
 
@@ -453,7 +455,7 @@ func generateTreePlays(init *guessTreeGenerateStack) *guessTree {
 			continue
 		}
 
-		passLeaf := leafFromPasses(top)
+		passLeaf := top.leafFromPasses()
 		if passLeaf != nil {
 			top.leafPushBack(passLeaf)
 			continue
@@ -550,7 +552,6 @@ func generateTreePlays(init *guessTreeGenerateStack) *guessTree {
 				node:             top.node.Children.Back().Value.(*guessTreeNode),
 			})
 		}
-		k = 0
 	}
 
 	return tree
@@ -582,39 +583,33 @@ func (top *guessTreeNode) AddChildren(children *list.List) {
 	}
 }
 
-func (top *guessTreeGenerateStack) leafPushBack(leaf *guessTreeLeaf) {
+func (top guessTreeGenerateStack) leafPushBack(leaf *guessTreeLeaf) {
 	parent := top.node.Parent
 
-	for current := top.node.Children.Front(); current != nil; current = current.Next() {
+	for current := parent.Children.Front(); current != nil; current = current.Next() {
 		currentValue := current.Value.(*guessTreeNode)
 		if currentValue == top.node {
-			top.node.Children.Remove(current)
+			parent.Children.Remove(current)
 			break
 		}
 	}
 
 	newLeaf := &guessTreeLeaf{
-		guessTreeNode: guessTreeNode{
-			Player: leaf.Player,
-			Table:  leaf.Table,
-			Hand:   parent.Hand,
-			Parent: parent,
-			Depth:  parent.Depth + 1,
-		},
-		Draw:   leaf.Draw,
-		Winner: leaf.Winner,
+		guessTreeNode: leaf.guessTreeNode,
+		Draw:          leaf.Draw,
+		Winner:        leaf.Winner,
 	}
 
 	parent.Children.PushBack(&newLeaf.guessTreeNode)
 	tree.Leafs.PushBack(newLeaf)
 }
 
-func leafFromPasses(top *guessTreeGenerateStack) *guessTreeLeaf {
+func (top guessTreeGenerateStack) leafFromPasses() *guessTreeLeaf {
 	aux := top.node
 	passes := 0
 	handSumPlayer := make(map[models.PlayerPosition]int, models.DominoMaxPlayer)
 	lastBlockedNode := aux
-	for aux != nil {
+	for ; aux != nil; aux = aux.Parent {
 		if aux.Parent != nil && reflect.DeepEqual(aux.Table, aux.Parent.Table) {
 			passes++
 			for _, b := range aux.Hand {
@@ -624,10 +619,9 @@ func leafFromPasses(top *guessTreeGenerateStack) *guessTreeLeaf {
 			lastBlockedNode = aux
 			break
 		}
-		aux = aux.Parent
 	}
 
-	if passes != models.DominoMaxPlayer {
+	if passes < models.DominoMaxPlayer {
 		return nil
 	}
 

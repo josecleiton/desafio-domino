@@ -259,7 +259,6 @@ func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 		}
 
 		generateTreeByPlay(state, play)
-		treeGeneratingWg.Wait()
 
 		return *play
 	}

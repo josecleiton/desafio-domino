@@ -483,9 +483,135 @@ func TestGenerateTree(t *testing.T) {
 		TableMap: tableMap,
 		Plays:    plays,
 	}
-	play := game.Play(state)
 
+	play := game.Play(state)
 	if play.Pass() {
+		t.Error("Pass is not allowed")
+	}
+
+	newPlays := []models.DominoPlay{
+		{
+			PlayerPosition: 1,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{L: 6, R: 6},
+			},
+		},
+		{
+			PlayerPosition: 2,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{L: 1, R: 6},
+			},
+		},
+		{
+			PlayerPosition: 3,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{L: 0, R: 1},
+			},
+		},
+		{
+			PlayerPosition: 4,
+			Bone: models.DominoInTable{
+				Edge:   models.RightEdge,
+				Domino: models.Domino{L: 6, R: 2},
+			},
+		},
+		{
+			PlayerPosition: 1,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{L: 0, R: 0},
+			},
+		},
+		{
+			PlayerPosition: 2,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{L: 3, R: 0},
+			},
+		},
+		{
+			PlayerPosition: 3,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{L: 5, R: 3},
+			},
+		},
+		{
+			PlayerPosition: 4,
+			Bone: models.DominoInTable{
+				Edge:   models.RightEdge,
+				Domino: models.Domino{L: 2, R: 2},
+			},
+		},
+		{
+			PlayerPosition: 1,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{L: 5, R: 5},
+			},
+		},
+		{
+			PlayerPosition: 2,
+			Bone: models.DominoInTable{
+				Edge:   models.RightEdge,
+				Domino: models.Domino{L: 2, R: 1},
+			},
+		},
+		{
+			PlayerPosition: 3,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{L: 0, R: 5},
+			},
+		},
+		{
+			PlayerPosition: 4,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{L: 6, R: 0},
+			},
+		},
+		{
+			PlayerPosition: play.PlayerPosition,
+			Bone:           *play.Bone,
+		},
+	}
+	newTableL := list.New()
+
+	for _, p := range newPlays {
+		if p.Bone.Edge == models.LeftEdge {
+			newTableL.PushFront(p.Bone.Domino)
+		} else {
+			newTableL.PushBack(p.Bone.Domino)
+		}
+	}
+
+	newTable := make([]models.Domino, 0, newTableL.Len())
+	for current := newTableL.Front(); current != nil; current = current.Next() {
+		newTable = append(newTable, current.Value.(models.Domino))
+	}
+
+	newHand := make([]models.Domino, 0, len(state.Hand)-1)
+	for _, bone := range state.Hand {
+		if !bone.Equals(play.Bone.Domino) {
+			newHand = append(newHand, bone)
+		}
+	}
+
+	newState := &models.DominoGameState{
+		PlayerPosition: play.PlayerPosition,
+		Hand:           newHand,
+		Table:          newTable,
+		TableMap:       tableMapFromTable(newTable),
+		Plays:          newPlays,
+	}
+
+	newPlay := game.Play(newState)
+
+	if newPlay.Pass() {
 		t.Error("Pass is not allowed")
 	}
 }
