@@ -119,6 +119,24 @@ func TestPlayInitial(t *testing.T) {
 
 }
 
+func tableMapFromTable(table []models.Domino) models.TableMap {
+	tableMap := make(models.TableMap, len(table))
+	for _, v := range table {
+		if _, ok := tableMap[v.L]; !ok {
+			tableMap[v.L] = make(models.TableBone, len(table))
+		}
+
+		if _, ok := tableMap[v.R]; !ok {
+			tableMap[v.R] = make(models.TableBone, len(table))
+		}
+
+		tableMap[v.L][v.R] = true
+		tableMap[v.R][v.L] = true
+	}
+
+	return tableMap
+}
+
 func TestPlayGlue(t *testing.T) {
 	stGameState := firstPlay()
 	stPlay := game.Play(&stGameState)
@@ -615,21 +633,146 @@ func TestGenerateTree(t *testing.T) {
 		t.Error("Pass is not allowed")
 	}
 }
+func TestDrawPlay(t *testing.T) {
+	plays := []models.DominoPlay{
+		{
+			PlayerPosition: 1,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{L: 6, R: 6},
+			},
+		},
+		{
+			PlayerPosition: 2,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{L: 0, R: 6},
+			},
+		},
+		{
+			PlayerPosition: 3,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{L: 5, R: 0},
+			},
+		},
+		{
+			PlayerPosition: 4,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{L: 5, R: 5},
+			},
+		},
+		{
+			PlayerPosition: 1,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{L: 4, R: 5},
+			},
+		},
+		{
+			PlayerPosition: 2,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{L: 6, R: 4},
+			},
+		},
+		{
+			PlayerPosition: 4,
+			Bone: models.DominoInTable{
+				Edge:   models.RightEdge,
+				Domino: models.Domino{L: 6, R: 5},
+			},
+		},
+		{
+			PlayerPosition: 1,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{L: 2, R: 6},
+			},
+		},
+		{
+			PlayerPosition: 3,
+			Bone: models.DominoInTable{
+				Edge:   models.RightEdge,
+				Domino: models.Domino{L: 5, R: 3},
+			},
+		},
+		{
+			PlayerPosition: 4,
+			Bone: models.DominoInTable{
+				Edge:   models.RightEdge,
+				Domino: models.Domino{L: 3, R: 2},
+			},
+		},
+		{
+			PlayerPosition: 1,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{L: 4, R: 2},
+			},
+		},
+		{
+			PlayerPosition: 2,
+			Bone: models.DominoInTable{
+				Edge:   models.LeftEdge,
+				Domino: models.Domino{L: 3, R: 4},
+			},
+		},
+		{
+			PlayerPosition: 3,
+			Bone: models.DominoInTable{
+				Edge:   models.RightEdge,
+				Domino: models.Domino{L: 2, R: 1},
+			},
+		},
+		{
+			PlayerPosition: 4,
+			Bone: models.DominoInTable{
+				Edge:   models.RightEdge,
+				Domino: models.Domino{L: 1, R: 6},
+			},
+		},
+	}
+	tableL := list.New()
 
-func tableMapFromTable(table []models.Domino) models.TableMap {
-	tableMap := make(models.TableMap, len(table))
-	for _, v := range table {
-		if _, ok := tableMap[v.L]; !ok {
-			tableMap[v.L] = make(models.TableBone, len(table))
+	for _, p := range plays {
+		if p.Bone.Edge == models.LeftEdge {
+			tableL.PushFront(p.Bone.Domino)
+		} else {
+			tableL.PushBack(p.Bone.Domino)
 		}
-
-		if _, ok := tableMap[v.R]; !ok {
-			tableMap[v.R] = make(models.TableBone, len(table))
-		}
-
-		tableMap[v.L][v.R] = true
-		tableMap[v.R][v.L] = true
 	}
 
-	return tableMap
+	table := make([]models.Domino, 0, tableL.Len())
+	for current := tableL.Front(); current != nil; current = current.Next() {
+		table = append(table, current.Value.(models.Domino))
+	}
+
+	tableMap := tableMapFromTable(table)
+
+	state := &models.DominoGameState{
+		PlayerPosition: 4,
+		Hand: []models.Domino{
+			{L: 1, R: 0},
+			{L: 2, R: 2},
+			{L: 1, R: 1},
+		},
+		Table:    table,
+		TableMap: tableMap,
+		Plays:    plays,
+	}
+
+	play := game.Play(state)
+
+	if !play.Pass() {
+		t.Error("Play is not allowed")
+	}
+
+	tree := game.WaitTreeGeneration()
+
+	if tree == nil {
+		t.Error("Tree not generated")
+	}
+
 }

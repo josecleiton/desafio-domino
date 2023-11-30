@@ -54,6 +54,12 @@ const firstTreeDepth = 1
 var tree *guessTree
 var treeGeneratingWg sync.WaitGroup
 
+func WaitTreeGeneration() *guessTree {
+	treeGeneratingWg.Wait()
+
+	return tree
+}
+
 func (s guessTreeGenerateStack) GenerateChildrenPlays(
 	player models.PlayerPosition,
 	hand []models.Domino,
@@ -179,7 +185,7 @@ func maximizeWinningChancesPlay(
 		return nil
 	}
 
-	treeGeneratingWg.Wait()
+	WaitTreeGeneration()
 
 	treeTraversingWg := sync.WaitGroup{}
 	treeTraversingWg.Add(len(plays))

@@ -25,11 +25,8 @@ var g *gameGlobals
 func init() {
 	g = &gameGlobals{
 		Hand: []models.Domino{},
-		UnavailableBones: make(
-			models.UnavailableBonesPlayer,
-			models.DominoMaxPlayer,
-		),
 	}
+
 }
 
 func Play(state *models.DominoGameState) models.DominoPlayWithPass {
@@ -157,7 +154,19 @@ func intermediateStates(state *models.DominoGameState) {
 
 func initialize(state *models.DominoGameState) {
 	g.Player = state.PlayerPosition
-	clear(g.UnavailableBones)
+
+	g.UnavailableBones = make(
+		models.UnavailableBonesPlayer,
+		models.DominoMaxPlayer,
+	)
+	for i := models.DominoMinPlayer; i <= models.DominoMaxPlayer; i++ {
+		player := models.PlayerPosition(i)
+		g.UnavailableBones[player] = make(
+			models.TableBone,
+			models.DominoUniqueBones,
+		)
+	}
+
 	g.States = ring.New(1)
 	g.States.Value = state
 }
