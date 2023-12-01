@@ -218,6 +218,20 @@ func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 		return play
 	}
 
+	edge := hasLastBoneEdge(state)
+	if edge != models.NoEdge {
+		if edge == models.LeftEdge {
+			play := commonMaximizedPlay(left)
+			generateTreeByPlay(state, &play)
+			return play
+		}
+		if edge == models.RightEdge {
+			play := commonMaximizedPlay(right)
+			generateTreeByPlay(state, &play)
+			return play
+		}
+	}
+
 	countResult := countPlay(state, left, right)
 	if countResult != nil {
 		generateTreeByPlay(state, countResult)

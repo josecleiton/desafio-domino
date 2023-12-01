@@ -14,6 +14,7 @@ type PlayerPosition int
 const (
 	LeftEdge  Edge = "left"
 	RightEdge Edge = "right"
+	NoEdge    Edge = ""
 )
 
 type DominoPlay struct {

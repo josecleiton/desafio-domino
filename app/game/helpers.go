@@ -101,3 +101,17 @@ func countPasses(bone models.DominoInTable) int {
 
 	return passes
 }
+
+func hasLastBoneEdge(state *models.DominoGameState) models.Edge {
+
+	leftEdge := countBones(state, dominoInTableFromEdge(state, models.LeftEdge))
+	rightEdge := countBones(state, dominoInTableFromEdge(state, models.RightEdge))
+
+	if leftEdge == 6 {
+		return models.LeftEdge
+	}
+	if rightEdge == 6 {
+		return models.RightEdge
+	}
+	return models.NoEdge
+}
