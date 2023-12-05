@@ -47,33 +47,23 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&request)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
 		log.Printf("Error happened in JSON marshal. Err: %s\n", err)
+
+		const status = http.StatusBadRequest
+		w.WriteHeader(status)
+		w.Write(parseError(err, status))
 
 		return
 	}
 
 	domino, err := gameRequestToDomain(&request)
 	if err != nil {
-		const status = http.StatusBadRequest
-		errorMap := map[string]interface{}{
-			"error":  err.Error(),
-			"status": http.StatusText(status),
-			"code":   status,
-		}
-
-		w.WriteHeader(status)
-
-		jsonResp, marshalErr := json.Marshal(errorMap)
-		if marshalErr != nil {
-			log.Printf("Error happened in JSON marshal. Err: %s\n", marshalErr)
-			w.Write([]byte(err.Error()))
-		} else {
-			w.Write(jsonResp)
-		}
-
 		log.Printf("Error happened in play. Err: %s\n", err)
+
+		const status = http.StatusBadRequest
+		w.WriteHeader(status)
+		w.Write(parseError(err, status))
+
 		return
 	}
 
@@ -104,6 +94,22 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 
 	wg.Wait()
 	log.Printf("[RES] %v\n", play)
+}
+
+func parseError(err error, status int) []byte {
+	errorMap := map[string]interface{}{
+		"error":  err.Error(),
+		"status": http.StatusText(status),
+		"code":   status,
+	}
+
+	jsonResp, marshalErr := json.Marshal(errorMap)
+	if marshalErr != nil {
+		log.Printf("Error happened in JSON marshal. Err: %s\n", marshalErr)
+		return []byte(err.Error())
+	}
+
+	return jsonResp
 }
 
 func gameRequestToDomain(request *gameStateRequest) (*models.DominoGameState, error) {
