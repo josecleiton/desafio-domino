@@ -6,6 +6,6 @@ RUN go build -ldflags "-s -w" -o bin/domino
 
 FROM gcr.io/distroless/base-debian12 AS release
 COPY --from=build /app/bin/domino /usr/local/bin/domino
-EXPOSE 8080
+EXPOSE 8000
 USER nonroot:nonroot
 ENTRYPOINT [ "domino" ]

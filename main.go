@@ -12,7 +12,7 @@ import (
 func main() {
 	http.HandleFunc("/", controllers.GameHandler)
 
-	port := ":8080"
+	port := ":8000"
 
 	log.Printf("Server started at http://localhost%s\n", port)
 
