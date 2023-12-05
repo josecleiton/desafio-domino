@@ -1,0 +1,7 @@
+.replit
+LICENSE
+*.md
+run_domino.js
+test/
+docs/
+.vscode/
