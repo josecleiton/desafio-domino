@@ -1,11 +1,11 @@
-FROM golang:1.21-alpine as build
+FROM golang:1.21-alpine AS build
 WORKDIR /app
 COPY . ./
 RUN go mod download
-RUN go build -o bin/domino
+RUN go build -ldflags "-s -w" -o bin/domino
 
-FROM alpine
+FROM gcr.io/distroless/base-debian12 AS release
 COPY --from=build /app/bin/domino /usr/local/bin/domino
 EXPOSE 8080
-
+USER nonroot:nonroot
 ENTRYPOINT [ "domino" ]
