@@ -674,26 +674,20 @@ func restingDominoes(
 		}
 	}
 
-	for boneX, v := range top.generate.TableMap {
-		for boneY, ok := range v {
-			if !ok {
-				continue
-			}
-
-			cannotPlayMap[boneX][boneY] = true
-			cannotPlayMap[boneY][boneX] = true
-		}
+	for _, bone := range top.node.Table {
+		cannotPlayMap[bone.L][bone.R] = true
+		cannotPlayMap[bone.R][bone.L] = true
 	}
 
-	for _, v := range top.node.searchOtherHandsDominoes(player) {
-		cannotPlayMap[v.L][v.R] = true
-		cannotPlayMap[v.R][v.L] = true
+	for _, bone := range top.node.searchAllHandsDominoes(player) {
+		cannotPlayMap[bone.L][bone.R] = true
+		cannotPlayMap[bone.R][bone.L] = true
 	}
 
 	dominoes := make([]models.Domino, 0, startGeneratingTreeDelta)
 	for i := models.DominoMinBone; i <= maxBone; i++ {
 		for j := i; j <= maxBone; j++ {
-			if unavailable, ok := cannotPlayMap[i][j]; ok && unavailable {
+			if cannotPlayMap[i][j] || cannotPlayMap[j][i] {
 				continue
 			}
 
@@ -708,20 +702,16 @@ func restingDominoes(
 	return dominoes
 }
 
-func (top guessTreeNode) searchOtherHandsDominoes(
+func (top guessTreeNode) searchAllHandsDominoes(
 	player models.PlayerPosition,
 ) []models.Domino {
 	result := make([]models.Domino, 0, models.DominoHandLength*3)
 
 	i := 0
-	for current := &top; current != nil && i < models.DominoMaxPlayer; current = current.Parent {
-		i++
-
-		if current.Player == player {
-			continue
-		}
-
+	for current := &top; current != nil && i <= models.DominoMaxPlayer; current = current.Parent {
 		result = append(result, current.Hand...)
+
+		i++
 	}
 
 	return result
