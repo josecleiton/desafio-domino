@@ -6,7 +6,6 @@ import (
 	"log"
 	"math/rand"
 	"reflect"
-	"sort"
 	"sync"
 
 	"github.com/josecleiton/domino/app/models"
@@ -178,120 +177,120 @@ func (t guessTree) RepositionCursor(generate guessTreeGenerate) *guessTreeNode {
 	return t.Cursor
 }
 
-func maximizeWinningChancesPlay(
-	plays ...*models.DominoPlayWithPass,
-) *models.DominoPlayWithPass {
-	if tree == nil || len(plays) == 0 {
-		return nil
-	}
+// func maximizeWinningChancesPlay(
+// 	plays ...*models.DominoPlayWithPass,
+// ) *models.DominoPlayWithPass {
+// 	if tree == nil || len(plays) == 0 {
+// 		return nil
+// 	}
 
-	WaitTreeGeneration()
+// 	WaitTreeGeneration()
 
-	treeTraversingWg := sync.WaitGroup{}
-	treeTraversingWg.Add(len(plays))
+// 	treeTraversingWg := sync.WaitGroup{}
+// 	treeTraversingWg.Add(len(plays))
 
-	playWinningTable := make(map[*models.DominoPlayWithPass][]int, len(plays))
-	playDrawTable := make(map[*models.DominoPlayWithPass][]int, len(plays))
+// 	playWinningTable := make(map[*models.DominoPlayWithPass][]int, len(plays))
+// 	playDrawTable := make(map[*models.DominoPlayWithPass][]int, len(plays))
 
-	pathsByPlay := func(play *models.DominoPlayWithPass) {
-		defer treeTraversingWg.Done()
-		winningLeafDepths := playWinningTable[play]
-		drawLeafDepths := playDrawTable[play]
+// 	pathsByPlay := func(play *models.DominoPlayWithPass) {
+// 		defer treeTraversingWg.Done()
+// 		winningLeafDepths := playWinningTable[play]
+// 		drawLeafDepths := playDrawTable[play]
 
-		for current := tree.Leafs.Front(); current != nil; current = current.Next() {
-			leaf := current.Value.(*guessTreeLeaf)
-			deltaDepth := leaf.Depth - tree.Cursor.Depth
+// 		for current := tree.Leafs.Front(); current != nil; current = current.Next() {
+// 			leaf := current.Value.(*guessTreeLeaf)
+// 			deltaDepth := leaf.Depth - tree.Cursor.Depth
 
-			if leaf.Draw && leaf.Winner {
-				drawLeafDepths = append(
-					drawLeafDepths,
-					deltaDepth,
-				)
-				continue
-			}
+// 			if leaf.Draw && leaf.Winner {
+// 				drawLeafDepths = append(
+// 					drawLeafDepths,
+// 					deltaDepth,
+// 				)
+// 				continue
+// 			}
 
-			if !leaf.Winner {
-				continue
-			}
+// 			if !leaf.Winner {
+// 				continue
+// 			}
 
-			winningLeafDepths = append(
-				winningLeafDepths,
-				deltaDepth,
-			)
-		}
+// 			winningLeafDepths = append(
+// 				winningLeafDepths,
+// 				deltaDepth,
+// 			)
+// 		}
 
-		sort.Slice(winningLeafDepths, func(i, j int) bool {
-			return winningLeafDepths[i] < winningLeafDepths[j]
-		})
+// 		sort.Slice(winningLeafDepths, func(i, j int) bool {
+// 			return winningLeafDepths[i] < winningLeafDepths[j]
+// 		})
 
-		sort.Slice(drawLeafDepths, func(i, j int) bool {
-			return drawLeafDepths[i] < drawLeafDepths[j]
-		})
-	}
+// 		sort.Slice(drawLeafDepths, func(i, j int) bool {
+// 			return drawLeafDepths[i] < drawLeafDepths[j]
+// 		})
+// 	}
 
-	for _, play := range plays {
-		playWinningTable[play] = []int{}
-		playDrawTable[play] = []int{}
-		go pathsByPlay(play)
-	}
+// 	for _, play := range plays {
+// 		playWinningTable[play] = []int{}
+// 		playDrawTable[play] = []int{}
+// 		go pathsByPlay(play)
+// 	}
 
-	treeTraversingWg.Wait()
+// 	treeTraversingWg.Wait()
 
-	for k, v := range playWinningTable {
-		if len(v) > 0 {
-			continue
-		}
+// 	for k, v := range playWinningTable {
+// 		if len(v) > 0 {
+// 			continue
+// 		}
 
-		delete(playWinningTable, k)
-	}
+// 		delete(playWinningTable, k)
+// 	}
 
-	for k, v := range playDrawTable {
-		if len(v) > 0 {
-			continue
-		}
-		delete(playDrawTable, k)
-	}
+// 	for k, v := range playDrawTable {
+// 		if len(v) > 0 {
+// 			continue
+// 		}
+// 		delete(playDrawTable, k)
+// 	}
 
-	playWinningTableLen, playDrawTableLen :=
-		len(playWinningTable), len(playDrawTable)
-	if playWinningTableLen == 0 && playDrawTableLen == 0 {
-		return nil
-	}
+// 	playWinningTableLen, playDrawTableLen :=
+// 		len(playWinningTable), len(playDrawTable)
+// 	if playWinningTableLen == 0 && playDrawTableLen == 0 {
+// 		return nil
+// 	}
 
-	if playWinningTableLen == 0 {
-		return betterPlayFromPlayDepth(plays, playDrawTable)
-	}
+// 	if playWinningTableLen == 0 {
+// 		return betterPlayFromPlayDepth(plays, playDrawTable)
+// 	}
 
-	return betterPlayFromPlayDepth(plays, playWinningTable)
-}
+// 	return betterPlayFromPlayDepth(plays, playWinningTable)
+// }
 
-func betterPlayFromPlayDepth(
-	plays []*models.DominoPlayWithPass,
-	playDepthTable map[*models.DominoPlayWithPass][]int,
-) *models.DominoPlayWithPass {
-	if len(playDepthTable) == 0 {
-		return nil
-	}
+// func betterPlayFromPlayDepth(
+// 	plays []*models.DominoPlayWithPass,
+// 	playDepthTable map[*models.DominoPlayWithPass][]int,
+// ) *models.DominoPlayWithPass {
+// 	if len(playDepthTable) == 0 {
+// 		return nil
+// 	}
 
-	betterPlay := plays[0]
-	for _, play := range plays[1:] {
-		if playDepthTable[betterPlay][0] <= 1 {
-			return betterPlay
-		}
+// 	betterPlay := plays[0]
+// 	for _, play := range plays[1:] {
+// 		if playDepthTable[betterPlay][0] <= 1 {
+// 			return betterPlay
+// 		}
 
-		if playDepthTable[play][0] <= 1 {
-			return play
-		}
+// 		if playDepthTable[play][0] <= 1 {
+// 			return play
+// 		}
 
-		if len(playDepthTable[betterPlay]) <= len(playDepthTable[play]) {
-			continue
-		}
+// 		if len(playDepthTable[betterPlay]) <= len(playDepthTable[play]) {
+// 			continue
+// 		}
 
-		betterPlay = play
-	}
+// 		betterPlay = play
+// 	}
 
-	return betterPlay
-}
+// 	return betterPlay
+// }
 
 func generateTreeByPlay(
 	state *models.DominoGameState,
