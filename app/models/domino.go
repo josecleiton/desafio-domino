@@ -43,19 +43,19 @@ func (d Domino) Equals(other Domino) bool {
 }
 
 func DominoFromString(s string) (*Domino, error) {
-	var x, y int
+	var a, b int
 
-	fmt.Sscanf(s, "%d-%d", &x, &y)
+	fmt.Sscanf(s, "%d-%d", &a, &b)
 
-	if x > DominoMaxBone || x < DominoMinBone {
-		return nil, fmt.Errorf("invalid bone: %d", x)
+	if a < DominoMinBone || a > DominoMaxBone {
+		return nil, fmt.Errorf("invalid bone: %d", a)
 	}
-	if y > DominoMaxBone || y < DominoMinBone {
-		return nil, fmt.Errorf("invalid bone: %d", y)
+	if b < DominoMinBone || b > DominoMaxBone {
+		return nil, fmt.Errorf("invalid bone: %d", b)
 	}
 
 	return &Domino{
-		L: x,
-		R: y,
+		L: a,
+		R: b,
 	}, nil
 }
