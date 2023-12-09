@@ -2,8 +2,6 @@ package game
 
 import (
 	"container/list"
-	"fmt"
-	"log"
 	"math/rand"
 	"reflect"
 	"sync"
@@ -172,7 +170,7 @@ func (t guessTree) RepositionCursor(generate guessTreeGenerate) *guessTreeNode {
 		}
 	}
 
-	log.Println("missing play on tree")
+	// log.Println("missing play on tree")
 
 	return t.Cursor
 }
@@ -444,7 +442,7 @@ func generateTreePlays(init *guessTreeGenerateStack) *guessTree {
 	stack.PushBack(init)
 
 	for stack.Len() > 0 {
-		fmt.Println(stack.Len())
+		// fmt.Println(stack.Len())
 		element := stack.Back()
 		top := element.Value.(*guessTreeGenerateStack)
 		stack.Remove(element)
@@ -508,7 +506,7 @@ func generateTreePlays(init *guessTreeGenerateStack) *guessTree {
 		storedIdx := make([]int, k)
 		combinationGen := combin.NewCombinationGenerator(n, k)
 
-		log.Println("generating children:", combin.Binomial(n, k))
+		// log.Println("generating children:", combin.Binomial(n, k))
 
 		for combinationGen.Next() {
 			cs := combinationGen.Combination(storedIdx)
