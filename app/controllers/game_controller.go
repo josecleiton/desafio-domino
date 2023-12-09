@@ -32,9 +32,9 @@ type playStateRequest struct {
 }
 
 type playStateResponse struct {
-	Player    models.PlayerPosition `json:"jogador"`
-	Bone      *string               `json:"pedra,omitempty"`
-	Direction *externalDirection    `json:"lado,omitempty"`
+	Player    *models.PlayerPosition `json:"jogador,omitempty"`
+	Bone      *string                `json:"pedra,omitempty"`
+	Direction *externalDirection     `json:"lado,omitempty"`
 }
 
 func GameHandler(w http.ResponseWriter, r *http.Request) {
@@ -201,7 +201,7 @@ func gameRequestToDomain(request *gameStateRequest) (*models.DominoGameState, er
 
 func dominoPlayToResponse(state *models.DominoGameState, dominoPlay models.DominoPlayWithPass) *playStateResponse {
 	if dominoPlay.Pass() {
-		return &playStateResponse{Player: dominoPlay.PlayerPosition}
+		return &playStateResponse{}
 	}
 
 	direction := new(externalDirection)
@@ -216,7 +216,7 @@ func dominoPlayToResponse(state *models.DominoGameState, dominoPlay models.Domin
 	domino := dominoPlay.Bone.Domino
 	bone := fmt.Sprintf("%d-%d", domino.L, domino.R)
 	return &playStateResponse{
-		Player:    dominoPlay.PlayerPosition,
+		Player:    &dominoPlay.PlayerPosition,
 		Bone:      &bone,
 		Direction: direction,
 	}
