@@ -73,9 +73,11 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		defer wg.Done()
 		log.Printf(
-			"[REQ] {PlaysCount: %d, Table: %v}\n",
-			len(domino.Plays),
+			"[REQ] {Table: %d | %v, Plays: %d | %v}\n",
+			len(domino.Table),
 			domino.Table,
+			len(domino.Plays),
+			domino.Plays,
 		)
 	}()
 
@@ -93,6 +95,7 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonResp)
 
 	wg.Wait()
+
 	log.Printf("[RES] %v\n", play)
 }
 
@@ -127,7 +130,7 @@ func gameRequestToDomain(request *gameStateRequest) (*models.DominoGameState, er
 	table := make([]models.Domino, 0, len(request.Table))
 	possibleEdges := []models.Edge{models.LeftEdge, models.RightEdge}
 	edges := make(models.Edges, len(possibleEdges))
-	plays := make([]models.DominoPlay, len(request.Plays))
+	plays := make([]models.DominoPlay, 0, len(request.Plays))
 
 	for _, bone := range request.Hand {
 		domino, err := models.DominoFromString(bone)
