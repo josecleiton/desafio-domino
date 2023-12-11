@@ -74,28 +74,33 @@ func Play(state *models.DominoGameState) models.DominoPlayWithPass {
 
 func intermediateStates(state *models.DominoGameState) {
 	statesLen := len(g.States)
-	nd := &g.States[statesLen-1]
+	last := &g.States[statesLen-1]
 	for i := statesLen - 2; i >= 0; i++ {
-		st := &g.States[i]
+		first := &g.States[i]
 
-		ndPlaysLen := len(nd.Plays)
-		if ndPlaysLen == 0 || ndPlaysLen == len(st.Plays) {
+		lastPlaysLen := len(last.Plays)
+		if lastPlaysLen == 0 || lastPlaysLen == len(first.Plays) {
 			continue
 		}
 
 		stPlayIdx := -1
-		for i := len(st.Plays) - 1; i >= 0; i-- {
-			if st.Plays[i] == nd.Plays[ndPlaysLen-1] {
+		for i := len(first.Plays) - 1; i >= 0; i-- {
+			if first.Plays[i] == last.Plays[lastPlaysLen-1] {
 				stPlayIdx = i
 				break
 			}
 
 		}
 
-		fmt.Println("ndPlay", nd.Plays)
-		fmt.Println("stPlay", nd.Plays[stPlayIdx])
+		if stPlayIdx == -1 {
+			log.Println("Something went wrong, no play found")
+			continue
+		}
 
-		nonEvaluatedPlays := nd.Plays[stPlayIdx+1:]
+		fmt.Println("ndPlay", last.Plays)
+		fmt.Println("stPlay", last.Plays[stPlayIdx])
+
+		nonEvaluatedPlays := last.Plays[stPlayIdx+1:]
 		nonEvaluatedPlaysLen := len(nonEvaluatedPlays)
 		if nonEvaluatedPlaysLen == models.DominoMaxPlayer {
 			continue
@@ -120,10 +125,10 @@ func intermediateStates(state *models.DominoGameState) {
 			}
 
 			currentPlayOnEdgeIdx := min(nonEvaluatedPlaysLen-1, i) + stPlayIdx + 1
-			currentPlayOnEdge := st.Plays[currentPlayOnEdgeIdx]
+			currentPlayOnEdge := first.Plays[currentPlayOnEdgeIdx]
 			var playOnReversedEdge *models.DominoPlay
 			for i := currentPlayOnEdgeIdx - 1; i >= 0; i-- {
-				play := &st.Plays[i]
+				play := &first.Plays[i]
 				if play.Bone.Edge == currentPlayOnEdge.Bone.Edge {
 					continue
 				}
