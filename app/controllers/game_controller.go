@@ -73,9 +73,9 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		defer wg.Done()
 		log.Printf(
-			"[REQ] {Table: %d | %v, Plays: %d | %v}\n",
+			"[REQ] {Table: %d | %s, Plays: %d | %v}\n",
 			len(domino.Table),
-			domino.Table,
+			models.TableString(domino.Table),
 			len(domino.Plays),
 			domino.Plays,
 		)
