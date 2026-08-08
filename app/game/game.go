@@ -194,28 +194,17 @@ func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 			g.UnavailableBones[g.Player][ep.R] = true
 		}
 
-		allPlays := make([]models.DominoPlay, 0, len(state.Plays))
-		allPlays = append(allPlays, state.Plays...)
-
-		generateTree(state, guessTreeGenerate{
-			Player: g.Player,
-			Hand:   g.Hand,
-			Plays:  allPlays,
-		})
-
 		return models.DominoPlayWithPass{PlayerPosition: g.Player}
 	}
 
 	canPlayBoth := leftLen > 0 && rightLen > 0
 	if !canPlayBoth {
 		play := oneSidedPlay(left, right)
-		generateTreeByPlay(state, &play)
 		return play
 	}
 
 	countResult := countPlay(state, left, right)
 	if countResult != nil {
-		generateTreeByPlay(state, countResult)
 		return *countResult
 	}
 
@@ -242,9 +231,9 @@ func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 	wg.Wait()
 
 	if duoResult != nil && passedResult != nil {
-		// if maximizedPlay := maximizeWinningChancesPlay(duoResult, passedResult); maximizedPlay != nil {
-		// 	return *maximizedPlay
-		// }
+		if maximizedPlay := maximizeWinningChancesPlay(state, duoResult, passedResult); maximizedPlay != nil {
+			return *maximizedPlay
+		}
 
 		passes := countPasses(*passedResult.Bone)
 
@@ -262,8 +251,6 @@ func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 			play = passedResult
 		}
 
-		generateTreeByPlay(state, play)
-
 		return *play
 	}
 
@@ -274,7 +261,6 @@ func midgamePlay(state *models.DominoGameState) models.DominoPlayWithPass {
 			continue
 		}
 
-		generateTreeByPlay(state, p)
 		return *p
 	}
 
